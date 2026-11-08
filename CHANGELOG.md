@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.0.2] - 2026-11-07
+
+### Fixed
+
+- `footOfPerpendicular()` now uses the correct hyperbolic construction (reflect + hyperbolic midpoint) instead of an incorrect Euclidean nearest-point-on-circle projection, fixing PerpendicularLine foot placement and ensuring circles through the foot are tangent to the geodesic
+
 ## [1.0.1] - 2026-11-07
 
 ### Fixed

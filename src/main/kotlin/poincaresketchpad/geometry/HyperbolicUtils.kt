@@ -359,17 +359,8 @@ object HyperbolicUtils {
         // For a circle orthogonal to unit circle, the foot of perpendicular from p is found by:
         // reflecting p through the geodesic, then the midpoint of p and its reflection lies on the geodesic.
         val (rx, ry) = reflectThroughGeodesic(px, py, arc, p1x, p1y, p2x, p2y)
-        // The geodesic midpoint of p and its reflection is the foot
-        // But actually, for a circle orthogonal to the unit circle, the foot is simply the
-        // nearest point on the Euclidean circle to p (along the radius from circle center through p)
-        val cx = arc.centerX
-        val cy = arc.centerY
-        val r = arc.radius
-        val dx = px - cx
-        val dy = py - cy
-        val dist = hypot(dx, dy)
-        if (dist < EPSILON) return Pair(cx + r, cy)
-        return Pair(cx + dx * r / dist, cy + dy * r / dist)
+        // The foot is the hyperbolic midpoint of p and its reflection through the geodesic
+        return hyperbolicMidpoint(px, py, rx, ry)
     }
 
     // --- Arc interpolation ---
