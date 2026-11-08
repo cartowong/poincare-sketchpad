@@ -10,6 +10,7 @@
 - **Git:** `.claude/` is gitignored (except `.claude/skills/`).
 - **Spec:** `spec/SPEC.md` and `spec/GEOMETRY.md` describe the full application design.
 - **Docs:** `README.md` and `docs/` product website (GitHub Pages) are present.
+- **CI/CD:** GitHub Actions workflows in `.github/workflows/` — `ci.yml` runs tests on PRs; `release.yml` builds DMG and MSI installers on `v*` tag push and creates a GitHub Release.
 
 ## Package Structure
 
