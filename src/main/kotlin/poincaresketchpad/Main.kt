@@ -5,7 +5,7 @@ import poincaresketchpad.export.HeadlessExportApp
 import poincaresketchpad.ui.SketchpadApp
 
 const val APP_NAME = "PoincareSketchpad"
-const val APP_VERSION = "1.0.1"
+const val APP_VERSION = "1.0.2"
 
 fun main(args: Array<String>) {
     if (args.isNotEmpty() && args[0] == "--export") {
