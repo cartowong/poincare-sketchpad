@@ -7,7 +7,8 @@ plugins {
 }
 
 group = "poincaresketchpad"
-version = "1.0.0"
+val mainKt = file("src/main/kotlin/poincaresketchpad/Main.kt").readText()
+version = Regex("""APP_VERSION\s*=\s*"([^"]+)"""").find(mainKt)?.groupValues?.get(1) ?: "1.0.0"
 
 repositories {
     mavenCentral()
@@ -44,9 +45,7 @@ runtime {
     val currentOs = org.gradle.internal.os.OperatingSystem.current()
 
     jpackage {
-        val mainKt = file("src/main/kotlin/poincaresketchpad/Main.kt").readText()
-        val versionMatch = Regex("""APP_VERSION\s*=\s*"([^"]+)"""").find(mainKt)
-        appVersion = versionMatch?.groupValues?.get(1) ?: "1.0.0"
+        appVersion = project.version.toString()
         imageName = "Poincare Sketchpad"
         installerName = "PoincareSketchpad"
 

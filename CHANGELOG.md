@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 ## [1.0.0] - 2026-11-07
 
+### Changed
+
+- Gradle project version now extracted from `APP_VERSION` in Main.kt instead of being hardcoded
+
 ### Added
 
 - Poincare disk model geometry engine (geodesics, circles, intersections, angles, regions)
