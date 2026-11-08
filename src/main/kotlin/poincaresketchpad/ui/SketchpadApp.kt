@@ -677,10 +677,10 @@ class SketchpadApp : Application() {
         sidebar.onCloseMeasurements = { toggleMeasurementsItem.fire() }
 
         val aboutMenu = Menu("About")
-        val aboutItem = MenuItem("About Poincare Sketchpad")
+        val aboutItem = MenuItem("About Poincar\u00E9 Sketchpad")
         aboutItem.setOnAction {
             val dialog = Dialog<Void>()
-            dialog.title = "About Poincare Sketchpad"
+            dialog.title = "About Poincar\u00E9 Sketchpad"
             dialog.dialogPane.buttonTypes.add(ButtonType.CLOSE)
 
             val content = VBox(12.0)
@@ -697,7 +697,7 @@ class SketchpadApp : Application() {
             }
 
             content.children.addAll(
-                Label("Poincare Sketchpad").apply { style = "-fx-font-size: 18px; -fx-font-weight: bold;" },
+                Label("Poincar\u00E9 Sketchpad").apply { style = "-fx-font-size: 18px; -fx-font-weight: bold;" },
                 Label("Version $APP_VERSION"),
                 Label("A compass-and-straightedge construction tool\nfor hyperbolic geometry in the Poincar\u00E9 disk model."),
                 Label("Copyright \u00A9 2026 Carto Wong"),
@@ -741,7 +741,7 @@ class SketchpadApp : Application() {
         val scene = Scene(root, 1440.0, 720.0)
         scene.stylesheets.add(javaClass.getResource("/styles/geometry.css")?.toExternalForm() ?: "")
 
-        stage.title = "Poincare Sketchpad"
+        stage.title = "Poincar\u00E9 Sketchpad"
         val appIconStream = javaClass.getResourceAsStream("/icons/app-icon.png")
         if (appIconStream != null) {
             stage.icons.add(Image(appIconStream))

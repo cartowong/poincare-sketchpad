@@ -134,7 +134,7 @@ object DiagramSerializer {
     fun validateAppName(appName: String) {
         if (appName != APP_NAME) {
             throw IncompatibleAppNameException(
-                "This file is not a Poincare Sketchpad file."
+                "This file is not a Poincar\u00E9 Sketchpad file."
             )
         }
     }
@@ -152,7 +152,7 @@ object DiagramSerializer {
     fun validateModel(model: String) {
         if (model != "poincare") {
             throw IncompatibleModelException(
-                "This file uses the \"$model\" model and cannot be opened by Poincare Sketchpad."
+                "This file uses the \"$model\" model and cannot be opened by Poincar\u00E9 Sketchpad."
             )
         }
     }

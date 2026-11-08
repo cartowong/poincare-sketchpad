@@ -84,6 +84,7 @@ src/test/kotlin/poincaresketchpad/
 - **Geodesic-geodesic intersection needs no `sign` field.** Two distinct geodesics intersect in at most one point inside the disk.
 - **Geodesic-circle sign disambiguation uses dot product.** Both intersection points lie on the geodesic, so cross-product disambiguation is degenerate. Uses `assignSignAlong` (dot product from midpoint of the two candidates along the chord direction) instead.
 - **Serialization includes `"model": "poincare"`.** Files without this field or with a different model are rejected. Json config uses `encodeDefaults = true` to ensure the model field is always serialized.
+- **UI-facing app name uses the diacritic: "Poincaré Sketchpad".** The `APP_NAME` constant (`"PoincareSketchpad"`) is ASCII-only for serialization compatibility. All user-visible strings (window title, About dialog, error messages) use `"Poincaré"` with the Unicode escape `\u00E9`.
 - **Three built-in constructions** (no Parallel Line): Midpoint, Perpendicular Line, Reflection Point.
 - **Grid is concentric hyperbolic circles + radial diameters**, not a square grid. Follows the Mobius viewport transform.
 - **Model-space angles = JavaFX angles.** The Y-flip from model→screen and the `atan2` negation for JavaFX cancel out. Never negate model-space `atan2` results when passing to JavaFX `Arc`. This was the root cause of several rendering bugs.
