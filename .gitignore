@@ -1,0 +1,13 @@
+.gradle/
+build/
+*.class
+*.jar
+!gradle/wrapper/gradle-wrapper.jar
+*.log
+.idea/
+*.iml
+.DS_Store
+.claude/*
+!.claude/skills/
+exports/
+custom/

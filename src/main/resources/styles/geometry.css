@@ -1,0 +1,55 @@
+.canvas-pane {
+    -fx-background-color: #E8E8E8;
+}
+
+.preview {
+    -fx-opacity: 0.4;
+}
+
+.toolbar {
+    -fx-background-color: #f0f0f0;
+    -fx-border-color: #cccccc;
+    -fx-border-width: 0 0 1 0;
+}
+
+.tool-button {
+    -fx-pref-width: 48;
+    -fx-pref-height: 32;
+    -fx-font-size: 10px;
+    -fx-border-width: 2;
+    -fx-border-color: transparent;
+}
+
+.sidebar-left {
+    -fx-background-color: #f8f8f8;
+    -fx-border-color: #cccccc;
+    -fx-border-width: 0 1 0 0;
+}
+
+.sidebar-right {
+    -fx-background-color: #f8f8f8;
+    -fx-border-color: #cccccc;
+    -fx-border-width: 0 0 0 1;
+}
+
+.sidebar-header {
+    -fx-font-weight: bold;
+    -fx-font-size: 12px;
+}
+
+.delete-button {
+    -fx-padding: 1 4 1 4;
+    -fx-font-size: 10px;
+}
+
+.recording-border {
+    -fx-border-color: #FF5722;
+    -fx-border-width: 3;
+}
+
+.table-row-cell:selected {
+    -fx-background-color: #2196F3;
+}
+.table-row-cell:selected .table-cell {
+    -fx-text-fill: white;
+}
