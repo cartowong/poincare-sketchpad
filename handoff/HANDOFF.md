@@ -98,3 +98,4 @@ src/test/kotlin/poincaresketchpad/
 - **Compiler warnings.** A few unused parameter and name-shadowing warnings exist (HyperbolicUtils, ExportRenderer, GeometryRenderer, Sidebar). Non-blocking.
 - **Custom export not manually tested.** The rectangular crop, scale slider, overlay, and aspect ratio lock have been implemented but not yet verified via `./gradlew run`.
 - **Label drag not manually verified.** The Y-sign and viewport bugs have been fixed in code but not yet confirmed via `./gradlew run`.
+- **ESC handling relies on canvas focus.** `DiskCanvasPane` calls `requestFocus()` when entering apply mode and transformation mode. If a future mode entry path bypasses this, ESC won't reach the canvas's key handler. The "Cancel Recording" menu item has no accelerator — recording cancellation is handled via `onEscapeFallthrough` as the lowest-priority ESC handler.

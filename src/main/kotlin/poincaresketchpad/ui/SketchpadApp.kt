@@ -406,7 +406,6 @@ class SketchpadApp : Application() {
         val saveRecordingItem = MenuItem("Save Recording")
         saveRecordingItem.accelerator = KeyCombination.valueOf("Shortcut+Shift+S")
         val cancelRecordingItem = MenuItem("Cancel Recording")
-        cancelRecordingItem.accelerator = KeyCombination.valueOf("Escape")
         val loadRecordingItem = MenuItem("Load Construction")
         loadRecordingItem.accelerator = KeyCombination.valueOf("Shortcut+L")
 

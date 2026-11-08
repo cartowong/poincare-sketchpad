@@ -210,6 +210,7 @@ class DiskCanvasPane(
     ) {
         applyMode = ApplyModeState(expectedTypes, 0, mutableListOf(), onComplete, onCancel, previewProvider)
         updateHintLabel()
+        requestFocus()
     }
 
     val isInApplyMode: Boolean get() = applyMode != null
@@ -256,6 +257,7 @@ class DiskCanvasPane(
         transformationMode = mode
         transformSnapshot = manager.snapshot()
         updateHintLabel()
+        requestFocus()
         onTransformModeChanged?.invoke()
     }
 

@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.0.1] - 2026-11-07
+
+### Fixed
+
+- ESC key now cancels construction apply mode (canvas requests focus on entering apply mode)
+- ESC key now cancels transformation mode (canvas requests focus on entering transformation mode)
+- Removed Escape accelerator from "Cancel Recording" menu item to prevent it from intercepting ESC when higher-priority handlers (apply mode, transformation mode, tool cancel) should take precedence
+
 ## [1.0.0] - 2026-11-07
 
 ### Changed
