@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 ### Changed
 
 - UI-facing app name now uses the diacritic mark: "Poincaré Sketchpad" (window title, About dialog, error messages)
+- Selection behavior: plain click now selects only the clicked object (deselecting all others). Modifier+click (Cmd on macOS, Ctrl on others) toggles selection without affecting other objects. Applies to both canvas and Object List table
 
 ## [1.0.2] - 2026-11-07
 

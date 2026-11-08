@@ -97,6 +97,7 @@ src/test/kotlin/poincaresketchpad/
 
 ## Known Issues / Gaps
 
+- **Selection behavior not yet implemented.** The spec (Section 3.4, Section 4.2) describes modifier-click selection (plain click = single-select, Cmd/Ctrl+click = toggle). The current code still uses the old toggle-without-modifier behavior. Files to change: `SelectionTool.kt` (canvas clicks) and `Sidebar.kt` (table row clicks). Both should use `event.isShortcutDown` to detect the modifier.
 - **Compiler warnings.** A few unused parameter and name-shadowing warnings exist (HyperbolicUtils, ExportRenderer, GeometryRenderer, Sidebar). Non-blocking.
 - **Custom export not manually tested.** The rectangular crop, scale slider, overlay, and aspect ratio lock have been implemented but not yet verified via `./gradlew run`.
 - **Label drag not manually verified.** The Y-sign and viewport bugs have been fixed in code but not yet confirmed via `./gradlew run`.
