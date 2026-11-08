@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.2.0] - 2026-11-08
+
+### Changed
+
+- Implement modifier-click selection behavior: plain click single-selects (deselects all others), Cmd/Ctrl+click toggles without affecting other selections. Applies to both canvas (SelectionTool) and Object List table (Sidebar)
+- Update Euclidean Sketchpad link to Euclid Sketchpad in README
+
 ## [1.1.0] - 2026-11-08
 
 ### Changed

@@ -126,10 +126,20 @@ class Sidebar(
                     // Let double-clicks pass through for inline editing
                     if (event.clickCount >= 2) return@addEventFilter
                     val sm = objectTable.selectionModel
-                    if (sm.isSelected(row.index)) {
-                        sm.clearSelection(row.index)
+                    if (event.isShortcutDown) {
+                        // Modifier+click: toggle without affecting others
+                        if (sm.isSelected(row.index)) {
+                            sm.clearSelection(row.index)
+                        } else {
+                            sm.select(row.index)
+                        }
                     } else {
-                        sm.select(row.index)
+                        // Plain click: single-select (deselect if sole selection)
+                        if (sm.isSelected(row.index) && sm.selectedItems.size == 1) {
+                            sm.clearSelection(row.index)
+                        } else {
+                            sm.clearAndSelect(row.index)
+                        }
                     }
                     event.consume()
                 }

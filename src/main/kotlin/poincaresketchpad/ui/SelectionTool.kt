@@ -52,10 +52,22 @@ class SelectionTool(
             pressHitId = hitId
             if (hitId != null) {
                 wasAlreadySelected = selectedIds.contains(hitId)
-                if (!wasAlreadySelected) {
-                    selectedIds.add(hitId)
-                    requestRender()
+                if (e.isShortcutDown) {
+                    // Modifier+click: toggle without affecting others
+                    if (wasAlreadySelected) {
+                        selectedIds.remove(hitId)
+                    } else {
+                        selectedIds.add(hitId)
+                    }
+                } else {
+                    // Plain click: deselect all others, select this one
+                    // If sole selection, defer deselect to mouseReleased (to allow drag)
+                    if (!(wasAlreadySelected && selectedIds.size == 1)) {
+                        selectedIds.clear()
+                        selectedIds.add(hitId)
+                    }
                 }
+                requestRender()
             }
         } else {
             pressHitId = null
@@ -97,8 +109,9 @@ class SelectionTool(
     }
 
     override fun onMouseReleased(e: MouseEvent, worldX: Double, worldY: Double) {
-        // If clicked (not dragged) on an already-selected object, deselect it now
-        if (!isDragging && wasAlreadySelected && pressHitId != null) {
+        // Plain click on sole selected object: deselect on release (not during drag)
+        if (!isDragging && !e.isShortcutDown && wasAlreadySelected && pressHitId != null
+            && selectedIds.size == 1 && selectedIds.contains(pressHitId)) {
             selectedIds.remove(pressHitId)
             requestRender()
         }
