@@ -6,6 +6,8 @@ import poincaresketchpad.geometry.*
 import poincaresketchpad.model.ConstructionApplicator
 import poincaresketchpad.model.ConstructionRecorder
 import poincaresketchpad.model.GeometricObjectManager
+import poincaresketchpad.model.StyleSettings
+import poincaresketchpad.model.StyleUtils
 import poincaresketchpad.model.UndoManager
 import poincaresketchpad.APP_VERSION
 import poincaresketchpad.persistence.ConstructionSerializer
@@ -33,6 +35,8 @@ class SketchpadApp : Application() {
         Application.setUserAgentStylesheet(PrimerLight().userAgentStylesheet)
 
         val manager = GeometricObjectManager()
+        val styleSettings = StyleSettings()
+        manager.styleSettings = styleSettings
         val undoManager = UndoManager(manager)
         val recorder = ConstructionRecorder(manager)
 
@@ -732,7 +736,10 @@ class SketchpadApp : Application() {
         }
         aboutMenu.items.add(aboutItem)
 
-        menuBar.menus.addAll(fileMenu, actionMenu, constructionMenu, viewMenu, transformationMenu, aboutMenu)
+        // Style menu — controls defaults for newly created objects
+        val styleMenu = buildStyleMenu(styleSettings)
+
+        menuBar.menus.addAll(fileMenu, actionMenu, constructionMenu, viewMenu, styleMenu, transformationMenu, aboutMenu)
 
         val root = BorderPane()
         root.top = menuBar
@@ -762,6 +769,121 @@ class SketchpadApp : Application() {
 
         stage.show()
 
+        // Right-click context menu for per-object styling
+        fun getStyleCategory(obj: GeometricObject): String? = when (obj) {
+            is PointLike -> "Point"
+            is Line, is Ray, is Segment, is PerpendicularLine -> "Geodesic"
+            is Circle -> "Circle"
+            is Angle -> "Angle"
+            is Region -> "Region"
+            else -> null
+        }
+
+        fun showStyleContextMenu(screenX: Double, screenY: Double) {
+            val ids = selectionTool.selectedIds.toList()
+            if (ids.isEmpty()) return
+
+            val categories = ids.mapNotNull { id ->
+                val obj = manager.getObject(id)
+                if (obj != null) getStyleCategory(obj) else null
+            }.toSet()
+            if (categories.size != 1) return
+            val category = categories.first()
+
+            val contextMenu = ContextMenu()
+
+            // Color sub-menu (all categories)
+            val colorMenu = Menu("Color")
+            val colorGroup = ToggleGroup()
+            val currentColors = ids.mapNotNull { manager.getMetadata(it)?.color }.toSet()
+            for (name in StyleUtils.COLOR_NAMES) {
+                val item = RadioMenuItem(name.replaceFirstChar { it.uppercase() })
+                item.toggleGroup = colorGroup
+                item.isSelected = currentColors.size == 1 && currentColors.first() == name
+                item.setOnAction {
+                    for (id in ids) {
+                        val meta = manager.getMetadata(id) ?: continue
+                        meta.color = name
+                    }
+                    undoManager.checkpoint()
+                    requestRender()
+                }
+                colorMenu.items.add(item)
+            }
+            contextMenu.items.add(colorMenu)
+
+            // Size sub-menu (Point, Angle)
+            if (category == "Point" || category == "Angle") {
+                val sizeMenu = Menu("Size")
+                val sizeGroup = ToggleGroup()
+                val currentSizes = ids.mapNotNull { manager.getMetadata(it)?.size }.toSet()
+                for (size in listOf("small", "medium", "large")) {
+                    val item = RadioMenuItem(size.replaceFirstChar { it.uppercase() })
+                    item.toggleGroup = sizeGroup
+                    item.isSelected = currentSizes.size == 1 && currentSizes.first() == size
+                    item.setOnAction {
+                        for (id in ids) {
+                            val meta = manager.getMetadata(id) ?: continue
+                            meta.size = size
+                        }
+                        undoManager.checkpoint()
+                        requestRender()
+                    }
+                    sizeMenu.items.add(item)
+                }
+                contextMenu.items.add(sizeMenu)
+            }
+
+            // Stroke Style sub-menu (Geodesic, Circle)
+            if (category == "Geodesic" || category == "Circle") {
+                val strokeStyleMenu = Menu("Stroke Style")
+                val strokeStyleGroup = ToggleGroup()
+                val currentStyles = ids.mapNotNull { manager.getMetadata(it)?.strokeStyle }.toSet()
+                for (style in listOf("solid", "dashed")) {
+                    val item = RadioMenuItem(style.replaceFirstChar { it.uppercase() })
+                    item.toggleGroup = strokeStyleGroup
+                    item.isSelected = currentStyles.size == 1 && currentStyles.first() == style
+                    item.setOnAction {
+                        for (id in ids) {
+                            val meta = manager.getMetadata(id) ?: continue
+                            meta.strokeStyle = style
+                        }
+                        undoManager.checkpoint()
+                        requestRender()
+                    }
+                    strokeStyleMenu.items.add(item)
+                }
+                contextMenu.items.add(strokeStyleMenu)
+            }
+
+            // Stroke Thickness sub-menu (Geodesic, Circle)
+            if (category == "Geodesic" || category == "Circle") {
+                val thicknessMenu = Menu("Stroke Thickness")
+                val thicknessGroup = ToggleGroup()
+                val currentThickness = ids.mapNotNull { manager.getMetadata(it)?.strokeThickness }.toSet()
+                for (thickness in listOf("thin", "normal", "thick")) {
+                    val item = RadioMenuItem(thickness.replaceFirstChar { it.uppercase() })
+                    item.toggleGroup = thicknessGroup
+                    item.isSelected = currentThickness.size == 1 && currentThickness.first() == thickness
+                    item.setOnAction {
+                        for (id in ids) {
+                            val meta = manager.getMetadata(id) ?: continue
+                            meta.strokeThickness = thickness
+                        }
+                        undoManager.checkpoint()
+                        requestRender()
+                    }
+                    thicknessMenu.items.add(item)
+                }
+                contextMenu.items.add(thicknessMenu)
+            }
+
+            contextMenu.show(canvasPane, screenX, screenY)
+        }
+
+        canvasPane.onRightClick = ::showStyleContextMenu
+        sidebar.onContextMenuRequest = ::showStyleContextMenu
+
         // Default tool: selection
         canvasPane.setTool(selectionTool)
 
@@ -769,6 +891,134 @@ class SketchpadApp : Application() {
         canvasPane.widthProperty().addListener { _, _, _ -> canvasPane.renderAll() }
         canvasPane.heightProperty().addListener { _, _, _ -> canvasPane.renderAll() }
         canvasPane.renderAll()
+    }
+
+    private fun buildStyleMenu(styleSettings: StyleSettings): Menu {
+        val menu = Menu("Style")
+
+        fun colorRadioMenu(label: String, getter: () -> String, setter: (String) -> Unit): Menu {
+            val sub = Menu(label)
+            val group = ToggleGroup()
+            for (name in StyleUtils.COLOR_NAMES) {
+                val item = RadioMenuItem(name.replaceFirstChar { it.uppercase() })
+                item.toggleGroup = group
+                item.isSelected = getter() == name
+                item.setOnAction { setter(name) }
+                sub.items.add(item)
+            }
+            // Update check state when menu is shown
+            sub.setOnShowing {
+                val current = getter()
+                for (item in sub.items) {
+                    if (item is RadioMenuItem) {
+                        item.isSelected = item.text.lowercase() == current
+                    }
+                }
+            }
+            return sub
+        }
+
+        fun sizeRadioMenu(label: String, getter: () -> String, setter: (String) -> Unit): Menu {
+            val sub = Menu(label)
+            val group = ToggleGroup()
+            for (size in listOf("small", "medium", "large")) {
+                val item = RadioMenuItem(size.replaceFirstChar { it.uppercase() })
+                item.toggleGroup = group
+                item.isSelected = getter() == size
+                item.setOnAction { setter(size) }
+                sub.items.add(item)
+            }
+            sub.setOnShowing {
+                val current = getter()
+                for (item in sub.items) {
+                    if (item is RadioMenuItem) {
+                        item.isSelected = item.text.lowercase() == current
+                    }
+                }
+            }
+            return sub
+        }
+
+        fun strokeStyleRadioMenu(getter: () -> String, setter: (String) -> Unit): Menu {
+            val sub = Menu("Stroke Style")
+            val group = ToggleGroup()
+            for (style in listOf("solid", "dashed")) {
+                val item = RadioMenuItem(style.replaceFirstChar { it.uppercase() })
+                item.toggleGroup = group
+                item.isSelected = getter() == style
+                item.setOnAction { setter(style) }
+                sub.items.add(item)
+            }
+            sub.setOnShowing {
+                val current = getter()
+                for (item in sub.items) {
+                    if (item is RadioMenuItem) {
+                        item.isSelected = item.text.lowercase() == current
+                    }
+                }
+            }
+            return sub
+        }
+
+        fun strokeThicknessRadioMenu(getter: () -> String, setter: (String) -> Unit): Menu {
+            val sub = Menu("Stroke Thickness")
+            val group = ToggleGroup()
+            for (thickness in listOf("thin", "normal", "thick")) {
+                val item = RadioMenuItem(thickness.replaceFirstChar { it.uppercase() })
+                item.toggleGroup = group
+                item.isSelected = getter() == thickness
+                item.setOnAction { setter(thickness) }
+                sub.items.add(item)
+            }
+            sub.setOnShowing {
+                val current = getter()
+                for (item in sub.items) {
+                    if (item is RadioMenuItem) {
+                        item.isSelected = item.text.lowercase() == current
+                    }
+                }
+            }
+            return sub
+        }
+
+        // Point sub-menu
+        val pointMenu = Menu("Point")
+        pointMenu.items.addAll(
+            sizeRadioMenu("Size", { styleSettings.point.size }, { styleSettings.point.size = it }),
+            colorRadioMenu("Color", { styleSettings.point.color }, { styleSettings.point.color = it })
+        )
+
+        // Geodesic sub-menu
+        val geodesicMenu = Menu("Geodesic")
+        geodesicMenu.items.addAll(
+            colorRadioMenu("Color", { styleSettings.geodesic.color }, { styleSettings.geodesic.color = it }),
+            strokeStyleRadioMenu({ styleSettings.geodesic.strokeStyle }, { styleSettings.geodesic.strokeStyle = it }),
+            strokeThicknessRadioMenu({ styleSettings.geodesic.strokeThickness }, { styleSettings.geodesic.strokeThickness = it })
+        )
+
+        // Circle sub-menu
+        val circleMenu = Menu("Circle")
+        circleMenu.items.addAll(
+            colorRadioMenu("Color", { styleSettings.circle.color }, { styleSettings.circle.color = it }),
+            strokeStyleRadioMenu({ styleSettings.circle.strokeStyle }, { styleSettings.circle.strokeStyle = it }),
+            strokeThicknessRadioMenu({ styleSettings.circle.strokeThickness }, { styleSettings.circle.strokeThickness = it })
+        )
+
+        // Angle sub-menu
+        val angleMenu = Menu("Angle")
+        angleMenu.items.addAll(
+            sizeRadioMenu("Size", { styleSettings.angle.size }, { styleSettings.angle.size = it }),
+            colorRadioMenu("Color", { styleSettings.angle.color }, { styleSettings.angle.color = it })
+        )
+
+        // Region sub-menu
+        val regionMenu = Menu("Region")
+        regionMenu.items.add(
+            colorRadioMenu("Color", { styleSettings.region.color }, { styleSettings.region.color = it })
+        )
+
+        menu.items.addAll(pointMenu, geodesicMenu, circleMenu, angleMenu, regionMenu)
+        return menu
     }
 
     private fun confirmUnsaved(undoManager: UndoManager): Boolean {

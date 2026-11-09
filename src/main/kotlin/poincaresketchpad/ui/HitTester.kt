@@ -37,7 +37,7 @@ class HitTester(
 
     companion object {
         const val SNAP_RADIUS = 10.0 // screen pixels
-        const val ANGLE_ARC_RADIUS = GeometryUtils.ANGLE_ARC_RADIUS
+        const val ANGLE_ARC_RADIUS = 25.0
     }
 
     /** Apply viewport Mobius transform to model coordinates */

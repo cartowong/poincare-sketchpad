@@ -49,6 +49,28 @@ class ConstructionSerializerTest {
     }
 
     @Test
+    fun `saveConstruction strips style fields`() {
+        val manager = GeometricObjectManager()
+        val p = manager.addObject { id -> FreePoint(id, 0.1, 0.2) }
+        manager.getMetadata(p.id)!!.isInput = true
+        manager.getMetadata(p.id)!!.color = "red"
+        manager.getMetadata(p.id)!!.size = "large"
+
+        val file = File.createTempFile("test_construction_styles", ".json")
+        file.deleteOnExit()
+
+        ConstructionSerializer.saveConstruction(manager, file)
+
+        val loaded = ConstructionSerializer.loadFromFile(file)
+        val sMeta = loaded.diagram.metadata[0]
+        assertNotNull(sMeta)
+        assertNull(sMeta!!.color)
+        assertNull(sMeta.size)
+        assertNull(sMeta.strokeStyle)
+        assertNull(sMeta.strokeThickness)
+    }
+
+    @Test
     fun `loadFromFile maps geodesic input types`() {
         val manager = GeometricObjectManager()
         val p1 = manager.addObject { id -> FreePoint(id, 0.1, 0.0) }

@@ -13,12 +13,15 @@ class GeometricObjectManager {
     private val objects = linkedMapOf<Int, GeometricObject>()
     private val metadata = linkedMapOf<Int, ObjectMetadata>()
     private var nextId = 0
+    var styleSettings: StyleSettings? = null
 
     fun addObject(factory: (id: Int) -> GeometricObject): GeometricObject {
         val id = nextId++
         val obj = factory(id)
         objects[id] = obj
-        metadata[id] = ObjectMetadata()
+        val meta = ObjectMetadata()
+        styleSettings?.applyDefaults(meta, obj)
+        metadata[id] = meta
         obj.recompute(objects)
         return obj
     }

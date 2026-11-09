@@ -80,4 +80,72 @@ class DiagramSerializerTest {
         assertTrue(meta2.labelVisible)
         assertTrue(meta2.inMeasurementTable)
     }
+
+    @Test
+    fun `style fields round-trip through serialization`() {
+        val manager = GeometricObjectManager()
+        val p = manager.addObject { id -> FreePoint(id, 0.1, 0.2) }
+        val meta = manager.getMetadata(p.id)!!
+        meta.color = "red"
+        meta.size = "large"
+
+        val line = manager.addObject { id -> Line(id, 0, 0) } // degenerate but fine for serialization
+        val lineMeta = manager.getMetadata(line.id)!!
+        lineMeta.color = "purple"
+        lineMeta.strokeStyle = "dashed"
+        lineMeta.strokeThickness = "thick"
+
+        val json = DiagramSerializer.serialize(manager)
+        val manager2 = GeometricObjectManager()
+        DiagramSerializer.deserialize(json, manager2)
+
+        val meta2 = manager2.getMetadata(p.id)!!
+        assertEquals("red", meta2.color)
+        assertEquals("large", meta2.size)
+
+        val lineMeta2 = manager2.getMetadata(line.id)!!
+        assertEquals("purple", lineMeta2.color)
+        assertEquals("dashed", lineMeta2.strokeStyle)
+        assertEquals("thick", lineMeta2.strokeThickness)
+    }
+
+    @Test
+    fun `backward compat - old files without style fields get correct defaults`() {
+        // Simulate an old file with no style fields
+        val json = """{
+            "appName": "PoincareSketchpad",
+            "version": "1.0.0",
+            "model": "poincare",
+            "objects": [
+                {"id": 0, "type": "FreePoint", "parentIds": [], "x": 0.1, "y": 0.2},
+                {"id": 1, "type": "FreePoint", "parentIds": [], "x": 0.3, "y": 0.4},
+                {"id": 2, "type": "Line", "parentIds": [0, 1]},
+                {"id": 3, "type": "Angle", "parentIds": [0, 1, 0]},
+                {"id": 4, "type": "Region", "pointIds": [0, 1, 0]}
+            ],
+            "metadata": {
+                "0": {"visible": true},
+                "1": {"visible": true},
+                "2": {"visible": true},
+                "3": {"visible": true},
+                "4": {"visible": true}
+            }
+        }"""
+
+        val manager = GeometricObjectManager()
+        DiagramSerializer.deserialize(json, manager)
+
+        // Point gets black
+        assertEquals("black", manager.getMetadata(0)!!.color)
+        // Line gets black
+        assertEquals("black", manager.getMetadata(2)!!.color)
+        // Angle gets green
+        assertEquals("green", manager.getMetadata(3)!!.color)
+        // Region gets yellow
+        assertEquals("yellow", manager.getMetadata(4)!!.color)
+        // All get default size/stroke
+        assertEquals("medium", manager.getMetadata(0)!!.size)
+        assertEquals("solid", manager.getMetadata(2)!!.strokeStyle)
+        assertEquals("normal", manager.getMetadata(2)!!.strokeThickness)
+    }
 }

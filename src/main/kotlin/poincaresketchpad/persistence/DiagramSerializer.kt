@@ -5,6 +5,7 @@ import poincaresketchpad.APP_VERSION
 import poincaresketchpad.geometry.*
 import poincaresketchpad.model.GeometricObjectManager
 import poincaresketchpad.model.ObjectMetadata
+import poincaresketchpad.model.StyleUtils
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -29,7 +30,11 @@ data class SerializedMetadata(
     val labelAnchorAngle: Double? = null,
     val labelAnchorT: Double? = null,
     val isInput: Boolean = false,
-    val isLocked: Boolean = false
+    val isLocked: Boolean = false,
+    val color: String? = null,
+    val size: String? = null,
+    val strokeStyle: String? = null,
+    val strokeThickness: String? = null
 )
 
 @Serializable
@@ -75,7 +80,11 @@ object DiagramSerializer {
                 labelAnchorAngle = meta.labelAnchorAngle,
                 labelAnchorT = meta.labelAnchorT,
                 isInput = meta.isInput,
-                isLocked = meta.isLocked
+                isLocked = meta.isLocked,
+                color = meta.color,
+                size = meta.size,
+                strokeStyle = meta.strokeStyle,
+                strokeThickness = meta.strokeThickness
             )
         }
         val diagram = SerializedDiagram(APP_NAME, APP_VERSION, "poincare", objects, metadata)
@@ -106,6 +115,10 @@ object DiagramSerializer {
                     meta.labelAnchorT = sMeta.labelAnchorT
                     meta.isInput = sMeta.isInput
                     meta.isLocked = sMeta.isLocked
+                    meta.color = sMeta.color ?: defaultColorForType(obj)
+                    meta.size = sMeta.size ?: "medium"
+                    meta.strokeStyle = sMeta.strokeStyle ?: "solid"
+                    meta.strokeThickness = sMeta.strokeThickness ?: "normal"
                 }
             }
         }
@@ -160,6 +173,12 @@ object DiagramSerializer {
     fun parseMajorVersion(version: String): Int =
         version.substringBefore('.').toIntOrNull()
             ?: throw IllegalArgumentException("Invalid version format: $version")
+
+    private fun defaultColorForType(obj: GeometricObject): String = when (obj) {
+        is Angle -> "green"
+        is Region -> "yellow"
+        else -> "black"
+    }
 
     private fun deserializeObject(sObj: SerializedObject, manager: GeometricObjectManager): GeometricObject {
         val id = sObj.id

@@ -75,6 +75,7 @@ class DiskCanvasPane(
     var gridVisible = false
     var suppressHover = false
     var onEscapeFallthrough: (() -> Unit)? = null
+    var onRightClick: ((Double, Double) -> Unit)? = null
 
     // Hit tester
     val hitTester = HitTester(manager)
@@ -432,6 +433,10 @@ class DiskCanvasPane(
 
     private fun onMousePressed(e: MouseEvent) {
         requestFocus()
+        if (e.button == MouseButton.SECONDARY) {
+            onRightClick?.invoke(e.screenX, e.screenY)
+            return
+        }
         if (e.button != MouseButton.PRIMARY) return
 
         // Space+Click: viewport Mobius translation (send clicked point to origin)

@@ -3,6 +3,7 @@ package poincaresketchpad.ui
 import poincaresketchpad.geometry.*
 import poincaresketchpad.model.GeometricObjectManager
 import poincaresketchpad.model.ObjectMetadata
+import poincaresketchpad.model.StyleUtils
 import poincaresketchpad.model.getObjectAnchor
 import javafx.scene.Group
 import javafx.scene.paint.Color
@@ -19,16 +20,15 @@ import kotlin.math.*
 
 private val SELECTED_COLOR = Color.web("#2196F3")
 private val HOVER_COLOR = Color.web("#2196F3")
-private val REGION_FILL = Color.web("#FFEB3B", 0.3)
-private val ANGLE_FILL = Color.web("#4CAF50", 0.3)
-private val ANGLE_STROKE = Color.web("#4CAF50", 0.7)
 private val PREVIEW_COLOR = Color.web("#FF5722")
 private const val PREVIEW_OPACITY = 0.4
 
-private const val POINT_RADIUS = 4.0
-private const val STROKE_WIDTH = 2.0
-private const val ANGLE_ARC_RADIUS = GeometryUtils.ANGLE_ARC_RADIUS
+private const val DEFAULT_POINT_RADIUS = 4.0
+private const val DEFAULT_STROKE_WIDTH = 2.0
+private const val DEFAULT_ANGLE_ARC_RADIUS = 25.0
 private const val FONT_SIZE = 13.0
+
+private fun resolveColor(colorName: String): Color = Color.web(StyleUtils.colorHex(colorName))
 
 object GeometryRenderer {
 
@@ -70,7 +70,7 @@ object GeometryRenderer {
             if (!isRenderable(meta)) continue
             val isSelected = obj.id in selectedIds
             val isHovered = obj.id == hoveredId
-            renderRegion(group, obj, vp, isSelected, isHovered)
+            renderRegion(group, obj, meta, vp, isSelected, isHovered)
         }
 
         // Pass 2: Angles
@@ -80,7 +80,7 @@ object GeometryRenderer {
             if (!isRenderable(meta)) continue
             val isSelected = obj.id in selectedIds
             val isHovered = obj.id == hoveredId
-            renderAngle(group, obj, manager, vp, isSelected, isHovered)
+            renderAngle(group, obj, meta, manager, vp, isSelected, isHovered)
         }
 
         // Pass 3: Geodesics and Circles
@@ -89,16 +89,18 @@ object GeometryRenderer {
             if (!isRenderable(meta) || !obj.isDefined) continue
             val isSelected = obj.id in selectedIds
             val isHovered = obj.id == hoveredId
+            val baseWidth = StyleUtils.strokeThickness(meta.strokeThickness)
             val color = when {
                 isSelected -> SELECTED_COLOR
                 isHovered -> HOVER_COLOR
-                else -> Color.BLACK
+                else -> resolveColor(meta.color)
             }
-            val strokeWidth = if (isHovered && !isSelected) STROKE_WIDTH * 1.5 else STROKE_WIDTH
+            val strokeWidth = if (isHovered && !isSelected) baseWidth * 1.5 else baseWidth
+            val dashed = meta.strokeStyle == "dashed"
 
             when {
-                obj is GeodesicLike -> renderGeodesic(group, obj, vp, color, strokeWidth)
-                obj is Circle -> renderCircle(group, obj, manager, vp, color, strokeWidth)
+                obj is GeodesicLike -> renderGeodesic(group, obj, vp, color, strokeWidth, dashed = dashed)
+                obj is Circle -> renderCircle(group, obj, manager, vp, color, strokeWidth, dashed = dashed)
             }
         }
 
@@ -109,12 +111,13 @@ object GeometryRenderer {
             if (!isRenderable(meta)) continue
             val isSelected = obj.id in selectedIds
             val isHovered = obj.id == hoveredId
+            val baseRadius = StyleUtils.pointRadius(meta.size)
             val color = when {
                 isSelected -> SELECTED_COLOR
                 isHovered -> HOVER_COLOR
-                else -> Color.BLACK
+                else -> resolveColor(meta.color)
             }
-            val radius = if (isHovered && !isSelected) POINT_RADIUS * 1.3 else POINT_RADIUS
+            val radius = if (isHovered && !isSelected) baseRadius * 1.3 else baseRadius
             val (sx, sy) = vp.modelToScreen(obj.x, obj.y)
             val circle = FxCircle(sx, sy, radius)
             circle.fill = color
@@ -169,7 +172,7 @@ object GeometryRenderer {
         for (obj in objects) {
             if (!obj.isDefined) continue
             when {
-                obj is GeodesicLike -> renderGeodesic(group, obj, vp, color, STROKE_WIDTH, PREVIEW_OPACITY, true)
+                obj is GeodesicLike -> renderGeodesic(group, obj, vp, color, DEFAULT_STROKE_WIDTH, PREVIEW_OPACITY, true)
                 obj is Circle -> renderPreviewCircle(group, obj, vp, color)
             }
         }
@@ -178,7 +181,7 @@ object GeometryRenderer {
         for (obj in objects) {
             if (obj !is PointLike || !obj.isDefined) continue
             val (sx, sy) = vp.modelToScreen(obj.x, obj.y)
-            val circle = FxCircle(sx, sy, POINT_RADIUS)
+            val circle = FxCircle(sx, sy, DEFAULT_POINT_RADIUS)
             circle.fill = color
             circle.opacity = PREVIEW_OPACITY
             circle.isMouseTransparent = true
@@ -251,7 +254,7 @@ object GeometryRenderer {
      */
     fun createPreviewPoint(mx: Double, my: Double, vp: ViewportParams): FxCircle {
         val (sx, sy) = vp.modelToScreen(mx, my)
-        return FxCircle(sx, sy, POINT_RADIUS).apply {
+        return FxCircle(sx, sy, DEFAULT_POINT_RADIUS).apply {
             fill = Color.BLACK
             opacity = PREVIEW_OPACITY
             isMouseTransparent = true
@@ -297,7 +300,7 @@ object GeometryRenderer {
             }
             val line = FxLine(startX, startY, endX, endY)
             line.stroke = Color.BLACK
-            line.strokeWidth = STROKE_WIDTH
+            line.strokeWidth = DEFAULT_STROKE_WIDTH
             line.opacity = PREVIEW_OPACITY
             line.isMouseTransparent = true
             nodes.add(line)
@@ -326,7 +329,7 @@ object GeometryRenderer {
                 startScreenX, startScreenY, endScreenX, endScreenY)
             if (arcNode != null) {
                 arcNode.stroke = Color.BLACK
-                arcNode.strokeWidth = STROKE_WIDTH
+                arcNode.strokeWidth = DEFAULT_STROKE_WIDTH
                 arcNode.fill = Color.TRANSPARENT
                 arcNode.opacity = PREVIEW_OPACITY
                 arcNode.isMouseTransparent = true
@@ -345,7 +348,8 @@ object GeometryRenderer {
         color: Color,
         strokeWidth: Double,
         opacity: Double = 1.0,
-        mouseTransparent: Boolean = false
+        mouseTransparent: Boolean = false,
+        dashed: Boolean = false
     ) {
         val (vx1, vy1) = vp.applyViewport(obj.x1, obj.y1)
         val (vx2, vy2) = vp.applyViewport(obj.x2, obj.y2)
@@ -366,6 +370,7 @@ object GeometryRenderer {
             val line = FxLine(startX, startY, endX, endY)
             line.stroke = color
             line.strokeWidth = strokeWidth
+            if (dashed) line.strokeDashArray.addAll(6.0, 4.0)
             if (opacity < 1.0) line.opacity = opacity
             if (mouseTransparent) line.isMouseTransparent = true
             group.children.add(line)
@@ -385,6 +390,7 @@ object GeometryRenderer {
                 arcNode.stroke = color
                 arcNode.strokeWidth = strokeWidth
                 arcNode.fill = Color.TRANSPARENT
+                if (dashed) arcNode.strokeDashArray.addAll(6.0, 4.0)
                 if (opacity < 1.0) arcNode.opacity = opacity
                 if (mouseTransparent) arcNode.isMouseTransparent = true
                 group.children.add(arcNode)
@@ -454,13 +460,15 @@ object GeometryRenderer {
         manager: GeometricObjectManager,
         vp: ViewportParams,
         color: Color,
-        strokeWidth: Double
+        strokeWidth: Double,
+        dashed: Boolean = false
     ) {
         val screenCircle = computeViewportCircle(circle, manager, vp) ?: return
         val fxCircle = FxCircle(screenCircle.cx, screenCircle.cy, screenCircle.r)
         fxCircle.fill = Color.TRANSPARENT
         fxCircle.stroke = color
         fxCircle.strokeWidth = strokeWidth
+        if (dashed) fxCircle.strokeDashArray.addAll(6.0, 4.0)
         group.children.add(fxCircle)
     }
 
@@ -497,7 +505,7 @@ object GeometryRenderer {
         val fxCircle = FxCircle(scx, scy, sr)
         fxCircle.fill = Color.TRANSPARENT
         fxCircle.stroke = color
-        fxCircle.strokeWidth = STROKE_WIDTH
+        fxCircle.strokeWidth = DEFAULT_STROKE_WIDTH
         fxCircle.opacity = PREVIEW_OPACITY
         fxCircle.isMouseTransparent = true
         group.children.add(fxCircle)
@@ -506,6 +514,7 @@ object GeometryRenderer {
     private fun renderAngle(
         group: Group,
         angle: Angle,
+        meta: ObjectMetadata,
         manager: GeometricObjectManager,
         vp: ViewportParams,
         isSelected: Boolean,
@@ -531,14 +540,20 @@ object GeometryRenderer {
         while (sweepDeg >= 0) sweepDeg -= 360.0
         while (sweepDeg < -360.0) sweepDeg += 360.0
 
+        val objColor = resolveColor(meta.color)
+        val arcRadius = StyleUtils.angleArcRadius(meta.size)
         val (svx, svy) = vp.modelToScreen(pV.x, pV.y)
-        val arc = Arc(svx, svy, ANGLE_ARC_RADIUS, ANGLE_ARC_RADIUS, startAngleDeg, sweepDeg)
+        val arc = Arc(svx, svy, arcRadius, arcRadius, startAngleDeg, sweepDeg)
         arc.type = ArcType.ROUND
         arc.fill = when {
             isSelected || isHovered -> Color.web("#2196F3", 0.5)
-            else -> ANGLE_FILL
+            else -> Color.color(objColor.red, objColor.green, objColor.blue, 0.3)
         }
-        arc.stroke = if (isSelected) SELECTED_COLOR else if (isHovered) HOVER_COLOR else ANGLE_STROKE
+        arc.stroke = when {
+            isSelected -> SELECTED_COLOR
+            isHovered -> HOVER_COLOR
+            else -> Color.color(objColor.red, objColor.green, objColor.blue, 0.7)
+        }
         arc.strokeWidth = 1.0
         group.children.add(arc)
     }
@@ -557,7 +572,7 @@ object GeometryRenderer {
         val startDeg = Math.toDegrees(angle.startAngleRadians)
         val sweepDeg = Math.toDegrees(angle.sweepAngleRadians)
 
-        val arc = Arc(svx, svy, ANGLE_ARC_RADIUS, ANGLE_ARC_RADIUS, startDeg, sweepDeg)
+        val arc = Arc(svx, svy, DEFAULT_ANGLE_ARC_RADIUS, DEFAULT_ANGLE_ARC_RADIUS, startDeg, sweepDeg)
         arc.type = ArcType.ROUND
         arc.fill = Color.web("#FF5722", 0.2)
         arc.stroke = color
@@ -570,6 +585,7 @@ object GeometryRenderer {
     private fun renderRegion(
         group: Group,
         region: Region,
+        meta: ObjectMetadata,
         vp: ViewportParams,
         isSelected: Boolean,
         isHovered: Boolean
@@ -617,9 +633,10 @@ object GeometryRenderer {
             }
         }
 
+        val objColor = resolveColor(meta.color)
         path.fill = when {
             isSelected || isHovered -> Color.web("#2196F3", 0.4)
-            else -> REGION_FILL
+            else -> Color.color(objColor.red, objColor.green, objColor.blue, 0.3)
         }
         path.stroke = null
         group.children.add(path)

@@ -3,6 +3,7 @@ package poincaresketchpad.export
 import poincaresketchpad.geometry.*
 import poincaresketchpad.model.GeometricObjectManager
 import poincaresketchpad.model.ObjectMetadata
+import poincaresketchpad.model.StyleUtils
 import poincaresketchpad.model.getObjectAnchor
 import javafx.embed.swing.SwingFXUtils
 import javafx.geometry.Rectangle2D
@@ -33,9 +34,6 @@ data class ExportSettings(
 
 object ExportRenderer {
 
-    private const val POINT_RADIUS = 4.0
-    private const val STROKE_WIDTH = 2.0
-    private const val ANGLE_ARC_RADIUS = GeometryUtils.ANGLE_ARC_RADIUS
     private const val FONT_SIZE = 12.0
     private const val MARGIN_FRACTION = 0.03
 
@@ -148,7 +146,8 @@ object ExportRenderer {
             if (obj.vertices.size >= 3) {
                 val path = buildRegionPathPng(obj, manager, diskRadius, tx, ty)
                 if (path != null) {
-                    path.fill = Color.web("#FFEB3B", 0.3)
+                    val objColor = Color.web(StyleUtils.colorHex(meta.color))
+                    path.fill = Color.color(objColor.red, objColor.green, objColor.blue, 0.3)
                     path.stroke = null
                     group.children.add(path)
                 }
@@ -168,10 +167,12 @@ object ExportRenderer {
             val startDeg = Math.toDegrees(obj.startAngleRadians)
             val sweepDeg = Math.toDegrees(obj.sweepAngleRadians)
 
-            val arc = Arc(cx, cy, ANGLE_ARC_RADIUS, ANGLE_ARC_RADIUS, startDeg, sweepDeg)
+            val objColor = Color.web(StyleUtils.colorHex(meta.color))
+            val arcRadius = StyleUtils.angleArcRadius(meta.size)
+            val arc = Arc(cx, cy, arcRadius, arcRadius, startDeg, sweepDeg)
             arc.type = ArcType.ROUND
-            arc.fill = Color.web("#4CAF50", 0.3)
-            arc.stroke = Color.web("#4CAF50", 0.7)
+            arc.fill = Color.color(objColor.red, objColor.green, objColor.blue, 0.3)
+            arc.stroke = Color.color(objColor.red, objColor.green, objColor.blue, 0.7)
             arc.strokeWidth = 1.0
             group.children.add(arc)
         }
@@ -180,17 +181,21 @@ object ExportRenderer {
         for (obj in manager.allObjects()) {
             val meta = manager.getMetadata(obj.id) ?: continue
             if (!isExportable(meta) || !obj.isDefined) continue
+            val objColor = Color.web(StyleUtils.colorHex(meta.color))
+            val strokeWidth = StyleUtils.strokeThickness(meta.strokeThickness)
+            val dashed = meta.strokeStyle == "dashed"
 
             if (obj is GeodesicLike) {
-                renderGeodesicPng(group, obj, diskRadius, tx, ty)
+                renderGeodesicPng(group, obj, diskRadius, tx, ty, objColor, strokeWidth, dashed)
             } else if (obj is Circle) {
                 val ecx = tx(obj.euclideanCenterX)
                 val ecy = ty(obj.euclideanCenterY)
                 val er = obj.euclideanRadius * diskRadius
                 val circle = FxCircle(ecx, ecy, er)
                 circle.fill = Color.TRANSPARENT
-                circle.stroke = Color.BLACK
-                circle.strokeWidth = STROKE_WIDTH
+                circle.stroke = objColor
+                circle.strokeWidth = strokeWidth
+                if (dashed) circle.strokeDashArray.addAll(6.0, 4.0)
                 group.children.add(circle)
             }
         }
@@ -200,8 +205,9 @@ object ExportRenderer {
             if (obj !is PointLike || !obj.isDefined) continue
             val meta = manager.getMetadata(obj.id) ?: continue
             if (!isExportable(meta)) continue
-            val circle = FxCircle(tx(obj.x), ty(obj.y), POINT_RADIUS)
-            circle.fill = Color.BLACK
+            val radius = StyleUtils.pointRadius(meta.size)
+            val circle = FxCircle(tx(obj.x), ty(obj.y), radius)
+            circle.fill = Color.web(StyleUtils.colorHex(meta.color))
             group.children.add(circle)
         }
 
@@ -224,7 +230,8 @@ object ExportRenderer {
     private fun renderGeodesicPng(
         group: Group, geo: GeodesicLike,
         diskRadius: Double,
-        tx: (Double) -> Double, ty: (Double) -> Double
+        tx: (Double) -> Double, ty: (Double) -> Double,
+        color: Color, strokeWidth: Double, dashed: Boolean
     ) {
         // Determine start and end points based on geodesic type
         val (startX, startY, endX, endY) = geodesicEndpoints(geo)
@@ -232,8 +239,9 @@ object ExportRenderer {
         if (geo.isDiameter) {
             // Render as a straight line
             val line = FxLine(tx(startX), ty(startY), tx(endX), ty(endY))
-            line.stroke = Color.BLACK
-            line.strokeWidth = STROKE_WIDTH
+            line.stroke = color
+            line.strokeWidth = strokeWidth
+            if (dashed) line.strokeDashArray.addAll(6.0, 4.0)
             group.children.add(line)
         } else {
             // Render as an arc
@@ -243,9 +251,10 @@ object ExportRenderer {
                 diskRadius, tx, ty
             )
             if (arcNode != null) {
-                arcNode.stroke = Color.BLACK
-                arcNode.strokeWidth = STROKE_WIDTH
+                arcNode.stroke = color
+                arcNode.strokeWidth = strokeWidth
                 arcNode.fill = Color.TRANSPARENT
+                if (dashed) arcNode.strokeDashArray.addAll(6.0, 4.0)
                 group.children.add(arcNode)
             }
         }
@@ -417,7 +426,8 @@ object ExportRenderer {
             if (obj.vertices.size >= 3) {
                 val pathData = buildRegionPathSvg(obj, manager, diskRadius, tx, ty)
                 if (pathData != null) {
-                    sb.appendLine("""    <path d="$pathData" fill="#FFEB3B" fill-opacity="0.3" stroke="none"/>""")
+                    val hex = StyleUtils.colorHex(meta.color)
+                    sb.appendLine("""    <path d="$pathData" fill="$hex" fill-opacity="0.3" stroke="none"/>""")
                 }
             }
         }
@@ -430,7 +440,8 @@ object ExportRenderer {
 
             val cx = tx(obj.vertexX)
             val cy = ty(obj.vertexY)
-            val r = ANGLE_ARC_RADIUS
+            val hex = StyleUtils.colorHex(meta.color)
+            val r = StyleUtils.angleArcRadius(meta.size)
 
             // In SVG, y is flipped relative to model. Negate startAngle to convert.
             val startAngle = -obj.startAngleRadians
@@ -446,21 +457,24 @@ object ExportRenderer {
             // CW in model with y-flip becomes CCW in SVG (sweep-flag=0)
             val sweepFlag = 0
 
-            sb.appendLine("""    <path d="M ${fmt(cx)} ${fmt(cy)} L ${fmt(x1)} ${fmt(y1)} A $r $r 0 $largeArc $sweepFlag ${fmt(x2)} ${fmt(y2)} Z" fill="#4CAF50" fill-opacity="0.3" stroke="#4CAF50" stroke-opacity="0.7" stroke-width="1"/>""")
+            sb.appendLine("""    <path d="M ${fmt(cx)} ${fmt(cy)} L ${fmt(x1)} ${fmt(y1)} A ${fmt(r)} ${fmt(r)} 0 $largeArc $sweepFlag ${fmt(x2)} ${fmt(y2)} Z" fill="$hex" fill-opacity="0.3" stroke="$hex" stroke-opacity="0.7" stroke-width="1"/>""")
         }
 
         // Pass 3: Geodesics and Circles
         for (obj in manager.allObjects()) {
             val meta = manager.getMetadata(obj.id) ?: continue
             if (!isExportable(meta) || !obj.isDefined) continue
+            val hex = StyleUtils.colorHex(meta.color)
+            val strokeWidth = StyleUtils.strokeThickness(meta.strokeThickness)
+            val dashAttr = if (meta.strokeStyle == "dashed") """ stroke-dasharray="6,4"""" else ""
 
             if (obj is GeodesicLike) {
-                renderGeodesicSvg(sb, obj, diskRadius, tx, ty)
+                renderGeodesicSvg(sb, obj, diskRadius, tx, ty, hex, strokeWidth, dashAttr)
             } else if (obj is Circle) {
                 val ecx = tx(obj.euclideanCenterX)
                 val ecy = ty(obj.euclideanCenterY)
                 val er = obj.euclideanRadius * diskRadius
-                sb.appendLine("""    <circle cx="${fmt(ecx)}" cy="${fmt(ecy)}" r="${fmt(er)}" fill="none" stroke="black" stroke-width="$STROKE_WIDTH"/>""")
+                sb.appendLine("""    <circle cx="${fmt(ecx)}" cy="${fmt(ecy)}" r="${fmt(er)}" fill="none" stroke="$hex" stroke-width="${fmt(strokeWidth)}"$dashAttr/>""")
             }
         }
 
@@ -469,7 +483,9 @@ object ExportRenderer {
             if (obj !is PointLike || !obj.isDefined) continue
             val meta = manager.getMetadata(obj.id) ?: continue
             if (!isExportable(meta)) continue
-            sb.appendLine("""    <circle cx="${fmt(tx(obj.x))}" cy="${fmt(ty(obj.y))}" r="$POINT_RADIUS" fill="black"/>""")
+            val hex = StyleUtils.colorHex(meta.color)
+            val radius = StyleUtils.pointRadius(meta.size)
+            sb.appendLine("""    <circle cx="${fmt(tx(obj.x))}" cy="${fmt(ty(obj.y))}" r="${fmt(radius)}" fill="$hex"/>""")
         }
 
         // Pass 5: Labels
@@ -489,12 +505,13 @@ object ExportRenderer {
     private fun renderGeodesicSvg(
         sb: StringBuilder, geo: GeodesicLike,
         diskRadius: Double,
-        tx: (Double) -> Double, ty: (Double) -> Double
+        tx: (Double) -> Double, ty: (Double) -> Double,
+        hex: String, strokeWidth: Double, dashAttr: String
     ) {
         val (startX, startY, endX, endY) = geodesicEndpoints(geo)
 
         if (geo.isDiameter) {
-            sb.appendLine("""    <line x1="${fmt(tx(startX))}" y1="${fmt(ty(startY))}" x2="${fmt(tx(endX))}" y2="${fmt(ty(endY))}" stroke="black" stroke-width="$STROKE_WIDTH"/>""")
+            sb.appendLine("""    <line x1="${fmt(tx(startX))}" y1="${fmt(ty(startY))}" x2="${fmt(tx(endX))}" y2="${fmt(ty(endY))}" stroke="$hex" stroke-width="${fmt(strokeWidth)}"$dashAttr/>""")
         } else {
             val sx = tx(startX)
             val sy = ty(startY)
@@ -513,7 +530,7 @@ object ExportRenderer {
             // model CCW arc (sweep > 0) maps to sweep-flag=0 (ty flips y, reversing winding)
             val sweepFlag = if (sweep < 0) 1 else 0
 
-            sb.appendLine("""    <path d="M ${fmt(sx)} ${fmt(sy)} A ${fmt(pixelR)} ${fmt(pixelR)} 0 $largeArc $sweepFlag ${fmt(ex)} ${fmt(ey)}" fill="none" stroke="black" stroke-width="$STROKE_WIDTH"/>""")
+            sb.appendLine("""    <path d="M ${fmt(sx)} ${fmt(sy)} A ${fmt(pixelR)} ${fmt(pixelR)} 0 $largeArc $sweepFlag ${fmt(ex)} ${fmt(ey)}" fill="none" stroke="$hex" stroke-width="${fmt(strokeWidth)}"$dashAttr/>""")
         }
     }
 

@@ -24,7 +24,7 @@ class AngleTool(
 
     private companion object {
         const val POINT_RADIUS = 4.0
-        const val ANGLE_ARC_RADIUS = GeometryUtils.ANGLE_ARC_RADIUS
+        const val ANGLE_ARC_RADIUS = 25.0
     }
 
     private var pointAId: Int? = null

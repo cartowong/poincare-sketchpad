@@ -5,7 +5,7 @@
 
 ## Current State
 
-- **Build:** `./gradlew build` succeeds. `./gradlew test` passes all 67 tests.
+- **Build:** `./gradlew build` succeeds. `./gradlew test` passes all 70 tests.
 - **Code:** All source files for all 10 phases are written (geometry, model, persistence, UI, export). The app has not been manually tested via `./gradlew run` yet.
 - **Git:** `.claude/` is gitignored (except `.claude/skills/`).
 - **Spec:** `spec/SPEC.md` and `spec/GEOMETRY.md` describe the full application design.
@@ -28,10 +28,11 @@ src/main/kotlin/poincaresketchpad/
     Angle.kt                       # Tangent-based angle computation
     Region.kt                      # Gauss-Bonnet area
     MeasurementUtils.kt            # Hyperbolic measurement formulas
-    GeometryUtils.kt               # Shared rendering constants (ANGLE_ARC_RADIUS)
   model/
-    ObjectMetadata.kt              # Per-object mutable state + getObjectAnchor
-    GeometricObjectManager.kt      # Object map, add/remove/move/propagate/snapshot
+    ObjectMetadata.kt              # Per-object mutable state (incl. style fields) + getObjectAnchor
+    GeometricObjectManager.kt      # Object map, add/remove/move/propagate/snapshot, styleSettings
+    StyleSettings.kt               # Application-level default styles per object category
+    StyleUtils.kt                  # Shared color/size/thickness maps
     UndoManager.kt                 # Snapshot-based undo/redo
     ConstructionRecorder.kt        # Recording lifecycle
     ConstructionApplicator.kt      # Apply constructions with ID remapping
@@ -60,8 +61,8 @@ src/main/kotlin/poincaresketchpad/
 
 src/test/kotlin/poincaresketchpad/
   geometry/
-    HyperbolicUtilsTest.kt         # 12 tests
-    GeodesicTest.kt                # 5 tests
+    HyperbolicUtilsTest.kt         # 27 tests
+    GeodesicTest.kt                # 7 tests
     CircleTest.kt                  # 4 tests
     IntersectionTest.kt            # 4 tests
     MeasurementUtilsTest.kt        # 5 tests
@@ -69,8 +70,8 @@ src/test/kotlin/poincaresketchpad/
     GeometricObjectManagerTest.kt  # 6 tests
     UndoManagerTest.kt             # 5 tests
   persistence/
-    DiagramSerializerTest.kt       # 6 tests
-    ConstructionSerializerTest.kt  # 3 tests
+    DiagramSerializerTest.kt       # 8 tests
+    ConstructionSerializerTest.kt  # 4 tests
 ```
 
 ## Architecture Notes
@@ -95,7 +96,7 @@ src/test/kotlin/poincaresketchpad/
 - **`footOfPerpendicular` uses reflect + hyperbolic midpoint.** The foot of perpendicular from P to a geodesic G is the hyperbolic midpoint of P and its reflection through G (via circle inversion). A previous implementation incorrectly used the Euclidean nearest point on the arc circle, which is NOT the hyperbolic perpendicular foot. The Euclidean shortcut only works for diameters (handled separately).
 - **LabelTool click-vs-drag detection.** `hitTestLabel` runs before the general `hitTest`, so label text intercepts clicks on the underlying object. For angles and regions, the label text overlaps the only clickable area (arc sector / polygon interior). The fix: track mouse displacement and treat sub-threshold (< 3px) presses on a label as a click (toggle visibility) rather than a drag.
 
-- **Per-object styling is specified but not yet implemented.** `spec/SPEC.md` Section 15 describes the full styling system (color, size, stroke style, stroke thickness per object, Style menu, right-click context menu, `StyleSettings`, backward-compatible serialization). Implementation is pending. Version will bump from 1.2.0 to 1.3.0.
+- **Per-object styling.** Each object has `color`, `size`, `strokeStyle`, `strokeThickness` fields in `ObjectMetadata`. `StyleSettings` holds application-level defaults per category (Point, Geodesic, Circle, Angle, Region), applied automatically in `addObject()`. Style menu controls defaults; right-click context menu changes styles on selected objects. Styles serialize in diagram JSON with nullable fields for backward compat. Construction files strip styles. `StyleUtils` provides shared color/size/thickness mappings used by both `GeometryRenderer` and `ExportRenderer`.
 
 ## Known Issues / Gaps
 

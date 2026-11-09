@@ -60,7 +60,11 @@ object ConstructionSerializer {
                 labelAnchorAngle = null,
                 labelAnchorT = null,
                 isInput = meta.isInput,
-                isLocked = meta.isLocked
+                isLocked = meta.isLocked,
+                color = null,
+                size = null,
+                strokeStyle = null,
+                strokeThickness = null
             )
         }
         val diagram = SerializedDiagram(APP_NAME, APP_VERSION, "poincare", objects, metadata)
