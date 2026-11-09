@@ -95,6 +95,8 @@ src/test/kotlin/poincaresketchpad/
 - **`footOfPerpendicular` uses reflect + hyperbolic midpoint.** The foot of perpendicular from P to a geodesic G is the hyperbolic midpoint of P and its reflection through G (via circle inversion). A previous implementation incorrectly used the Euclidean nearest point on the arc circle, which is NOT the hyperbolic perpendicular foot. The Euclidean shortcut only works for diameters (handled separately).
 - **LabelTool click-vs-drag detection.** `hitTestLabel` runs before the general `hitTest`, so label text intercepts clicks on the underlying object. For angles and regions, the label text overlaps the only clickable area (arc sector / polygon interior). The fix: track mouse displacement and treat sub-threshold (< 3px) presses on a label as a click (toggle visibility) rather than a drag.
 
+- **Per-object styling is specified but not yet implemented.** `spec/SPEC.md` Section 15 describes the full styling system (color, size, stroke style, stroke thickness per object, Style menu, right-click context menu, `StyleSettings`, backward-compatible serialization). Implementation is pending. Version will bump from 1.2.0 to 1.3.0.
+
 ## Known Issues / Gaps
 
 - **Compiler warnings.** A few unused parameter and name-shadowing warnings exist (HyperbolicUtils, ExportRenderer, GeometryRenderer, Sidebar). Non-blocking.

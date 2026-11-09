@@ -4,6 +4,22 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.3.0] - Unreleased
+
+### Added
+
+- Per-object styling: color, size, stroke style, and stroke thickness properties on `ObjectMetadata`
+- Style menu (between View and Transformation) with sub-menus for Point, Geodesic, Circle, Angle, and Region default styles
+- Right-click context menu on canvas and object list table to change styles of same-type selected objects
+- `StyleSettings` class for application-level default styles applied to newly created objects
+- Color palette: black, brown, green, purple, red, yellow
+- Point size options: small (3px), medium (4px), large (6px)
+- Angle arc radius options: small (20px), medium (25px), large (30px)
+- Stroke thickness options: thin (1px), normal (2px), thick (3px)
+- Dashed stroke style option (6px dash, 4px gap)
+- Style fields (`color`, `size`, `strokeStyle`, `strokeThickness`) in serialized metadata with backward-compatible defaults
+- Backward compatibility: old files without style fields load with type-aware color defaults (green for angles, yellow for regions)
+
 ## [1.2.0] - 2026-11-08
 
 ### Changed
