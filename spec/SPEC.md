@@ -449,7 +449,7 @@ All File menu items are disabled during construction recording.
 | *(separator)* | | |
 | Show | Cmd+Shift+I | Make selected objects visible |
 | Hide | Cmd+I | Hide selected objects (also hides their labels) |
-| Delete | Cmd+D | Delete selected objects and descendants (with confirmation) |
+| Delete | Delete | Delete selected objects and descendants (with confirmation) |
 | *(separator)* | | |
 | Undo | Cmd+Z | Undo |
 | Redo | Cmd+Shift+Z | Redo |
