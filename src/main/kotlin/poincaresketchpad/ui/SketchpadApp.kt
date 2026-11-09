@@ -739,7 +739,7 @@ class SketchpadApp : Application() {
         // Style menu — controls defaults for newly created objects
         val styleMenu = buildStyleMenu(styleSettings)
 
-        menuBar.menus.addAll(fileMenu, actionMenu, constructionMenu, viewMenu, styleMenu, transformationMenu, aboutMenu)
+        menuBar.menus.addAll(fileMenu, actionMenu, constructionMenu, styleMenu, transformationMenu, viewMenu, aboutMenu)
 
         val root = BorderPane()
         root.top = menuBar

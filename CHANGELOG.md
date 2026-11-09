@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.5.0] - 2026-11-08
+
+### Changed
+
+- Menu bar order: File, Action, Construction, Style, Transformation, View, About (Style and Transformation now precede View)
+
 ## [1.4.0] - 2026-11-08
 
 ### Changed

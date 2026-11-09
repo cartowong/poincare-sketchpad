@@ -477,19 +477,9 @@ All File menu items are disabled during construction recording.
 - Not recording: Start, Load, Load from Folder, Unload All, and built-ins enabled. Save Recording and Cancel disabled.
 - Recording: Start, Load, Load from Folder, Unload All disabled. Save Recording, Cancel, and built-ins enabled. File menu items also disabled.
 
-### 8.4 View Menu
+### 8.4 Style Menu
 
-| Item | Shortcut | Description |
-|------|----------|-------------|
-| Show Grid / Hide Grid | Cmd+G | Toggle grid visibility (label toggles) |
-| *(separator)* | | |
-| Show / Hide Object List | — | Toggle left pane visibility (label toggles) |
-| Show / Hide Custom Constructions | — | Toggle constructions table in right pane (label toggles) |
-| Show / Hide Measurements | — | Toggle measurements table in right pane (label toggles) |
-
-### 8.5 Style Menu
-
-Controls the default styles applied to newly created objects. Located between the View and Transformation menus. All items use radio menu items with checkmarks indicating the current setting. No keyboard shortcuts. The Style menu remains enabled during construction recording.
+Controls the default styles applied to newly created objects. Located between the Construction and Transformation menus. All items use radio menu items with checkmarks indicating the current setting. No keyboard shortcuts. The Style menu remains enabled during construction recording.
 
 Not persisted across sessions — resets to defaults on each launch.
 
@@ -503,7 +493,7 @@ Not persisted across sessions — resets to defaults on each launch.
 
 When a new object is created (by a tool or construction apply), its style is copied from the current `StyleSettings` for its object category. `StyleSettings.applyDefaults(metadata, obj)` inspects the object type and copies the matching fields.
 
-### 8.6 Transformation Menu
+### 8.5 Transformation Menu
 
 | Item | Shortcut | Description |
 |------|----------|-------------|
@@ -511,6 +501,16 @@ When a new object is created (by a tool or construction apply), its style is cop
 | Rotation | — | Enter rotation transformation mode (see Section 13.2) |
 
 All Transformation menu items are disabled during construction recording and during apply mode.
+
+### 8.6 View Menu
+
+| Item | Shortcut | Description |
+|------|----------|-------------|
+| Show Grid / Hide Grid | Cmd+G | Toggle grid visibility (label toggles) |
+| *(separator)* | | |
+| Show / Hide Object List | — | Toggle left pane visibility (label toggles) |
+| Show / Hide Custom Constructions | — | Toggle constructions table in right pane (label toggles) |
+| Show / Hide Measurements | — | Toggle measurements table in right pane (label toggles) |
 
 ### 8.7 About Menu
 
@@ -861,7 +861,7 @@ When a new object is created, its style is copied from the current `StyleSetting
 | Angle | green | medium | — | — |
 | Region | yellow | — | — | — |
 
-The Style menu (Section 8.5) reads and writes these values. Not persisted across sessions.
+The Style menu (Section 8.4) reads and writes these values. Not persisted across sessions.
 
 ### 15.5 Changing Styles on Existing Objects
 
