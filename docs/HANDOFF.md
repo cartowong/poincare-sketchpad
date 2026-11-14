@@ -8,7 +8,7 @@
 - **Build:** `./gradlew build` succeeds. `./gradlew test` passes all 70 tests.
 - **Code:** All source files for all 10 phases are written (geometry, model, persistence, UI, export). The app has not been manually tested via `./gradlew run` yet.
 - **Git:** `.claude/` is gitignored (except `.claude/skills/`).
-- **Spec:** `spec/SPEC.md` and `spec/GEOMETRY.md` describe the full application design.
+- **Spec:** `docs/SPEC.md` and `docs/GEOMETRY.md` describe the full application design.
 - **Docs:** `README.md` and `docs/` product website (GitHub Pages) are present.
 - **CI/CD:** GitHub Actions workflows in `.github/workflows/` — `ci.yml` runs tests on PRs; `release.yml` builds DMG and MSI installers on `v*` tag push and creates a GitHub Release.
 
