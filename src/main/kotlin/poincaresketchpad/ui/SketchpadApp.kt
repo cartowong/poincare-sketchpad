@@ -736,8 +736,8 @@ class SketchpadApp : Application() {
         }
         aboutMenu.items.add(aboutItem)
 
-        // Style menu — controls defaults for newly created objects
-        val styleMenu = buildStyleMenu(styleSettings)
+        // Style menu — dual-purpose: applies to selected objects or changes defaults
+        val styleMenu = buildStyleMenu(styleSettings, manager, undoManager, { selectionTool.selectedIds.toSet() }, requestRender)
 
         menuBar.menus.addAll(fileMenu, actionMenu, constructionMenu, styleMenu, transformationMenu, viewMenu, aboutMenu)
 
@@ -893,20 +893,48 @@ class SketchpadApp : Application() {
         canvasPane.renderAll()
     }
 
-    private fun buildStyleMenu(styleSettings: StyleSettings): Menu {
+    private fun buildStyleMenu(
+        styleSettings: StyleSettings,
+        manager: GeometricObjectManager,
+        undoManager: UndoManager,
+        selectedIds: () -> Set<Int>,
+        requestRender: () -> Unit
+    ): Menu {
         val menu = Menu("Style")
 
-        fun colorRadioMenu(label: String, getter: () -> String, setter: (String) -> Unit): Menu {
+        fun styleCategory(obj: GeometricObject): String? = when (obj) {
+            is PointLike -> "Point"
+            is GeodesicLike -> "Geodesic"
+            is Circle -> "Circle"
+            is Angle -> "Angle"
+            is Region -> "Region"
+            else -> null
+        }
+
+        fun selectedIdsForCategory(category: String): List<Int> =
+            selectedIds().filter { id ->
+                manager.getObject(id)?.let { obj -> styleCategory(obj) } == category
+            }
+
+        fun colorRadioMenu(label: String, category: String, getter: () -> String, setter: (String) -> Unit): Menu {
             val sub = Menu(label)
             val group = ToggleGroup()
             for (name in StyleUtils.COLOR_NAMES) {
-                val item = RadioMenuItem(name.replaceFirstChar { it.uppercase() })
+                val item = RadioMenuItem(name.replaceFirstChar { ch -> ch.uppercase() })
                 item.toggleGroup = group
                 item.isSelected = getter() == name
-                item.setOnAction { setter(name) }
+                item.setOnAction {
+                    val ids = selectedIdsForCategory(category)
+                    if (ids.isNotEmpty()) {
+                        for (id in ids) { manager.getMetadata(id)?.color = name }
+                        undoManager.checkpoint()
+                        requestRender()
+                    } else {
+                        setter(name)
+                    }
+                }
                 sub.items.add(item)
             }
-            // Update check state when menu is shown
             sub.setOnShowing {
                 val current = getter()
                 for (item in sub.items) {
@@ -918,14 +946,23 @@ class SketchpadApp : Application() {
             return sub
         }
 
-        fun sizeRadioMenu(label: String, getter: () -> String, setter: (String) -> Unit): Menu {
+        fun sizeRadioMenu(label: String, category: String, getter: () -> String, setter: (String) -> Unit): Menu {
             val sub = Menu(label)
             val group = ToggleGroup()
             for (size in listOf("small", "medium", "large")) {
-                val item = RadioMenuItem(size.replaceFirstChar { it.uppercase() })
+                val item = RadioMenuItem(size.replaceFirstChar { ch -> ch.uppercase() })
                 item.toggleGroup = group
                 item.isSelected = getter() == size
-                item.setOnAction { setter(size) }
+                item.setOnAction {
+                    val ids = selectedIdsForCategory(category)
+                    if (ids.isNotEmpty()) {
+                        for (id in ids) { manager.getMetadata(id)?.size = size }
+                        undoManager.checkpoint()
+                        requestRender()
+                    } else {
+                        setter(size)
+                    }
+                }
                 sub.items.add(item)
             }
             sub.setOnShowing {
@@ -939,14 +976,23 @@ class SketchpadApp : Application() {
             return sub
         }
 
-        fun strokeStyleRadioMenu(getter: () -> String, setter: (String) -> Unit): Menu {
+        fun strokeStyleRadioMenu(category: String, getter: () -> String, setter: (String) -> Unit): Menu {
             val sub = Menu("Stroke Style")
             val group = ToggleGroup()
             for (style in listOf("solid", "dashed")) {
-                val item = RadioMenuItem(style.replaceFirstChar { it.uppercase() })
+                val item = RadioMenuItem(style.replaceFirstChar { ch -> ch.uppercase() })
                 item.toggleGroup = group
                 item.isSelected = getter() == style
-                item.setOnAction { setter(style) }
+                item.setOnAction {
+                    val ids = selectedIdsForCategory(category)
+                    if (ids.isNotEmpty()) {
+                        for (id in ids) { manager.getMetadata(id)?.strokeStyle = style }
+                        undoManager.checkpoint()
+                        requestRender()
+                    } else {
+                        setter(style)
+                    }
+                }
                 sub.items.add(item)
             }
             sub.setOnShowing {
@@ -960,14 +1006,23 @@ class SketchpadApp : Application() {
             return sub
         }
 
-        fun strokeThicknessRadioMenu(getter: () -> String, setter: (String) -> Unit): Menu {
+        fun strokeThicknessRadioMenu(category: String, getter: () -> String, setter: (String) -> Unit): Menu {
             val sub = Menu("Stroke Thickness")
             val group = ToggleGroup()
             for (thickness in listOf("thin", "normal", "thick")) {
-                val item = RadioMenuItem(thickness.replaceFirstChar { it.uppercase() })
+                val item = RadioMenuItem(thickness.replaceFirstChar { ch -> ch.uppercase() })
                 item.toggleGroup = group
                 item.isSelected = getter() == thickness
-                item.setOnAction { setter(thickness) }
+                item.setOnAction {
+                    val ids = selectedIdsForCategory(category)
+                    if (ids.isNotEmpty()) {
+                        for (id in ids) { manager.getMetadata(id)?.strokeThickness = thickness }
+                        undoManager.checkpoint()
+                        requestRender()
+                    } else {
+                        setter(thickness)
+                    }
+                }
                 sub.items.add(item)
             }
             sub.setOnShowing {
@@ -984,37 +1039,37 @@ class SketchpadApp : Application() {
         // Point sub-menu
         val pointMenu = Menu("Point")
         pointMenu.items.addAll(
-            sizeRadioMenu("Size", { styleSettings.point.size }, { styleSettings.point.size = it }),
-            colorRadioMenu("Color", { styleSettings.point.color }, { styleSettings.point.color = it })
+            sizeRadioMenu("Size", "Point", { styleSettings.point.size }, { styleSettings.point.size = it }),
+            colorRadioMenu("Color", "Point", { styleSettings.point.color }, { styleSettings.point.color = it })
         )
 
         // Geodesic sub-menu
         val geodesicMenu = Menu("Geodesic")
         geodesicMenu.items.addAll(
-            colorRadioMenu("Color", { styleSettings.geodesic.color }, { styleSettings.geodesic.color = it }),
-            strokeStyleRadioMenu({ styleSettings.geodesic.strokeStyle }, { styleSettings.geodesic.strokeStyle = it }),
-            strokeThicknessRadioMenu({ styleSettings.geodesic.strokeThickness }, { styleSettings.geodesic.strokeThickness = it })
+            colorRadioMenu("Color", "Geodesic", { styleSettings.geodesic.color }, { styleSettings.geodesic.color = it }),
+            strokeStyleRadioMenu("Geodesic", { styleSettings.geodesic.strokeStyle }, { styleSettings.geodesic.strokeStyle = it }),
+            strokeThicknessRadioMenu("Geodesic", { styleSettings.geodesic.strokeThickness }, { styleSettings.geodesic.strokeThickness = it })
         )
 
         // Circle sub-menu
         val circleMenu = Menu("Circle")
         circleMenu.items.addAll(
-            colorRadioMenu("Color", { styleSettings.circle.color }, { styleSettings.circle.color = it }),
-            strokeStyleRadioMenu({ styleSettings.circle.strokeStyle }, { styleSettings.circle.strokeStyle = it }),
-            strokeThicknessRadioMenu({ styleSettings.circle.strokeThickness }, { styleSettings.circle.strokeThickness = it })
+            colorRadioMenu("Color", "Circle", { styleSettings.circle.color }, { styleSettings.circle.color = it }),
+            strokeStyleRadioMenu("Circle", { styleSettings.circle.strokeStyle }, { styleSettings.circle.strokeStyle = it }),
+            strokeThicknessRadioMenu("Circle", { styleSettings.circle.strokeThickness }, { styleSettings.circle.strokeThickness = it })
         )
 
         // Angle sub-menu
         val angleMenu = Menu("Angle")
         angleMenu.items.addAll(
-            sizeRadioMenu("Size", { styleSettings.angle.size }, { styleSettings.angle.size = it }),
-            colorRadioMenu("Color", { styleSettings.angle.color }, { styleSettings.angle.color = it })
+            sizeRadioMenu("Size", "Angle", { styleSettings.angle.size }, { styleSettings.angle.size = it }),
+            colorRadioMenu("Color", "Angle", { styleSettings.angle.color }, { styleSettings.angle.color = it })
         )
 
         // Region sub-menu
         val regionMenu = Menu("Region")
         regionMenu.items.add(
-            colorRadioMenu("Color", { styleSettings.region.color }, { styleSettings.region.color = it })
+            colorRadioMenu("Color", "Region", { styleSettings.region.color }, { styleSettings.region.color = it })
         )
 
         menu.items.addAll(pointMenu, geodesicMenu, circleMenu, angleMenu, regionMenu)
