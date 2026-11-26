@@ -30,6 +30,9 @@ dependencies {
 tasks.test {
     useJUnitPlatform()
     systemProperty("prism.order", "sw")
+    testLogging {
+        exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+    }
     if (project.hasProperty("updateGoldens")) {
         systemProperty("updateGoldens", "true")
         outputs.upToDateWhen { false }
