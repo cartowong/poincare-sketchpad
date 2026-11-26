@@ -732,6 +732,23 @@ Both PNG and SVG exports share the same rendering logic:
 
 Produces 4 files: `<name>_canvas.png/svg` (default 700px diameter), `<name>_custom.png/svg` (1920px diameter). All exports use white-on-gray background, no grid.
 
+### 12.7 PDF Export (Planned — v1.7.0, not yet implemented)
+
+Agreed design for adding PDF as a third export format (mirrors Euclid Sketchpad §12.7, adapted to the disk):
+
+- **Library**: Apache PDFBox 3.x (Apache 2.0) draws true vector output: paths, Bézier curves, dash patterns, fill transparency for regions, text. Add it to `build.gradle.kts`, add its notice to `THIRD_PARTY_NOTICES`, and check that it runs within the hardcoded jpackage modules (`java.base`, `java.desktop`, `java.logging`, `jdk.unsupported`).
+- **Shared rendering walker**: refactor `ExportRenderer` so that the grid (concentric circles + radial lines) and the 5-pass object logic (currently duplicated as `renderObjectsPng` / `renderObjectsSvg`, `renderGeodesicPng` / `renderGeodesicSvg`, `buildRegionPathPng` / `buildRegionPathSvg`) are written once. They will call a small internal drawing interface (line, circular arc, circle, path with fill/alpha, text, dash) with PNG, SVG, and PDF backends. Before refactoring, add snapshot tests for PNG and SVG output so the refactor can be checked for regressions. Keep the `sweepFlag = sweep < 0` rule for region arcs.
+- **Arcs**: PDF has no arc operator, so the PDF backend converts geodesic arcs, angle arcs, and region edges into cubic Bézier segments (≤ 90° each). Diameters stay straight lines.
+- **Page size**: one page of exactly W×H points, matching the exported pixel dimensions 1:1 (Diameter×Diameter for Canvas, Width×Height for Custom; same semantics as SVG). No paper-size options.
+- **Transparent background**: applies to PDF as it does to SVG. When checked, no gray exterior is drawn (the white disk is still drawn).
+- **Labels**: drawn directly in screen coordinates with no y-flip or baseline shift (same as the current PNG/SVG export).
+- **Label font**: DejaVu Sans (bundled TTF in `src/main/resources/fonts/`, license added to `THIRD_PARTY_NOTICES`), embedded via `PDType0Font.load()` so only the glyphs used are included. Same font in all three sister projects. Characters the font lacks (e.g. CJK, emoji) are replaced with `?` and the export shows a warning rather than failing. PNG and SVG label fonts are unchanged.
+- **Dialog**: add a third Format radio button (PDF) and a `*.pdf` file-chooser filter.
+- **Headless export**: produces 6 files (2 methods × PNG/SVG/PDF). Update the "4 files" messages and the project skill docs.
+- **Release**: ships as v1.7.0 with CHANGELOG, README feature list, and HANDOFF updates.
+
+**Still open:** PDF metadata (title, creator) and the PDF test approach (for example, parsing the output back with PDFBox).
+
 ---
 
 ## 13. Transformations

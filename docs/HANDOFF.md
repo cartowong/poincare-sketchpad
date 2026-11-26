@@ -100,6 +100,7 @@ src/test/kotlin/poincaresketchpad/
 
 ## Known Issues / Gaps
 
+- **PDF export not implemented yet.** The agreed design is in `docs/SPEC.md` §12.7: PDFBox, a shared PNG/SVG/PDF rendering walker with PNG/SVG snapshot tests added first, W×H-point pages, 6 headless files, v1.7.0. Labels use embedded DejaVu Sans. Still open: PDF metadata and the PDF test approach.
 - **Compiler warnings.** A few unused parameter and name-shadowing warnings exist (HyperbolicUtils, ExportRenderer, GeometryRenderer, Sidebar). Non-blocking.
 - **Custom export not manually tested.** The rectangular crop, scale slider, overlay, and aspect ratio lock have been implemented but not yet verified via `./gradlew run`.
 - **Label drag not manually verified.** The Y-sign and viewport bugs have been fixed in code but not yet confirmed via `./gradlew run`.
