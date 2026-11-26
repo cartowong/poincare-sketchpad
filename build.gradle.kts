@@ -22,12 +22,18 @@ javafx {
 dependencies {
     implementation("io.github.mkpaz:atlantafx-base:2.0.1")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.2")
+    implementation("org.apache.pdfbox:pdfbox:3.0.8")
     testImplementation(kotlin("test"))
     testImplementation("org.junit.jupiter:junit-jupiter:5.10.1")
 }
 
 tasks.test {
     useJUnitPlatform()
+    systemProperty("prism.order", "sw")
+    if (project.hasProperty("updateGoldens")) {
+        systemProperty("updateGoldens", "true")
+        outputs.upToDateWhen { false }
+    }
 }
 
 application {

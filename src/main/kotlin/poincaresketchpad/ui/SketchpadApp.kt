@@ -233,7 +233,12 @@ class SketchpadApp : Application() {
             sidebar.setCloseButtonsDisabled(true)
             val dialog = ExportDialog(stage, canvasPane,
                 onExport = { settings, file ->
-                    ExportRenderer.export(settings, manager, file)
+                    val warnings = ExportRenderer.export(settings, manager, file)
+                    if (warnings.isNotEmpty()) {
+                        Alert(Alert.AlertType.WARNING, warnings.joinToString("\n\n")).apply {
+                            headerText = "Export completed with warnings"
+                        }.showAndWait()
+                    }
                 },
                 onDialogClosed = {
                     toggleObjectsItem.isDisable = false

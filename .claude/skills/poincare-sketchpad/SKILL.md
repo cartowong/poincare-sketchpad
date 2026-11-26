@@ -1,6 +1,6 @@
 ---
 name: poincare-sketchpad
-description: Project skills for Poincare Sketchpad. Supports 4 actions — "deploy app" (version release), "export diagram" (headless PNG/SVG), "merge pr" (merge release PR and push tag), "update screenshot" (copy app screenshot to GitHub Pages). Use when user says "deploy", "release", "cut a release", "export diagram", "merge release", "merge release pr", "update screenshot", or invokes /poincare-sketchpad.
+description: Project skills for Poincare Sketchpad. Supports 4 actions — "deploy app" (version release), "export diagram" (headless PNG/SVG/PDF), "merge pr" (merge release PR and push tag), "update screenshot" (copy app screenshot to GitHub Pages). Use when user says "deploy", "release", "cut a release", "export diagram", "merge release", "merge release pr", "update screenshot", or invokes /poincare-sketchpad.
 allowed-tools: Bash(git tag *) Bash(git add *) Bash(git commit *) Bash(git push *) Bash(gh pr *) Bash(./gradlew *) Bash(ls *) Bash(git checkout *) Bash(git pull *) Bash(git branch *) Bash(git diff *) Bash(git log *) Bash(git status *) Bash(cp *)
 ---
 
@@ -110,7 +110,7 @@ Check which branch you are on (`git branch --show-current`).
 
 ## Export Diagram
 
-Headless export of a diagram file to 4 images (2 modes x 2 formats).
+Headless export of a diagram file to 6 files (2 modes x 3 formats).
 
 ### Inputs
 
@@ -126,9 +126,9 @@ If the user did not provide a diagram path, **ask for one before proceeding**.
    ```
    ./gradlew run --args="--export <diagram-path> <output-dir>"
    ```
-3. Verify output with `ls -la <output-dir>/`. Expect 4 non-zero-size files:
-   - `<name>_canvas.png`, `<name>_canvas.svg`
-   - `<name>_custom.png`, `<name>_custom.svg`
+3. Verify output with `ls -la <output-dir>/`. Expect 6 non-zero-size files:
+   - `<name>_canvas.png`, `<name>_canvas.svg`, `<name>_canvas.pdf`
+   - `<name>_custom.png`, `<name>_custom.svg`, `<name>_custom.pdf`
 4. Report the results to the user.
 
 ---

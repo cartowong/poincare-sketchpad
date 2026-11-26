@@ -30,7 +30,7 @@ src/main/kotlin/poincaresketchpad/
   model/            # GeometricObjectManager, undo/redo, construction recording/applying
   persistence/      # JSON serialization/deserialization for diagrams and constructions
   ui/               # JavaFX views, canvas, tools, renderer, sidebar, toolbar
-  export/           # PNG and SVG export (dialog + renderer)
+  export/           # PNG, SVG, and PDF export (dialog + renderer)
   Main.kt           # Application entry point; dispatches --export to HeadlessExportApp
 
 src/main/resources/
@@ -54,7 +54,7 @@ src/main/resources/
 | `Sidebar` | ui | Left pane (objects table) and right pane (constructions + measurements tables). |
 | `DiagramSerializer` | persistence | Serializes/deserializes the full diagram to/from JSON. |
 | `ConstructionSerializer` | persistence | Saves constructions and loads construction files into `LoadedConstruction` records. |
-| `ExportRenderer` | export | Renders to PNG (via JavaFX snapshot) or SVG (manual string generation). |
+| `ExportRenderer` | export | Renders to PNG (via JavaFX snapshot), SVG (manual string generation), or PDF (Apache PDFBox) through a shared `ExportCanvas` walker. |
 | `HeadlessExportApp` | export | CLI-driven headless export. Loads a diagram JSON and exports files. |
 
 ### 2.3 Coordinate System
@@ -672,7 +672,7 @@ Every JSON file includes top-level `"appName"` and `"version"` fields. The `appN
 Non-modal dialog with:
 
 - **Method**: 2 radio buttons (Canvas, Custom).
-- **Format**: 2 radio buttons (PNG, SVG).
+- **Format**: 3 radio buttons (PNG, SVG, PDF).
 - **Options**: "Transparent background" checkbox, "Include grid" checkbox (both default off).
 - **Dimensions** (varies by method, see below).
 - **Buttons**: Export, Cancel.
@@ -708,18 +708,20 @@ When Custom method is selected, a crop overlay is displayed on the canvas:
 
 ### 12.5 Export Rendering
 
-Both PNG and SVG exports share the same rendering logic:
+PNG, SVG, and PDF exports share the same rendering logic (`ExportRenderer` walks the diagram once and draws through the internal `ExportCanvas` interface; `PngExportCanvas`, `SvgExportCanvas`, and `PdfExportCanvas` are the backends):
 
 - Selection and hover states are cleared (all objects render in their per-object color).
 - 5 passes: regions, angles, geodesics/circles, points, labels.
 - Geodesics rendered as arcs (or line segments for diameters). No arrowheads.
 - Per-object styles (color, size, stroke style, stroke thickness) are respected in exports.
 - Grid uses concentric circles and radial lines.
-- Background: white disk on gray exterior (or transparent).
+- Background: white disk on gray exterior. With "Transparent background" checked, neither the gray exterior nor the white disk is drawn.
 
 **PNG**: builds a JavaFX `Group`, takes a snapshot via `Node.snapshot()`, writes via `ImageIO`.
 
 **SVG**: generates SVG XML string manually. Points -> `<circle>`, geodesics -> `<path>` (arc), circles -> `<circle>`, angles -> `<path>` (arc), regions -> `<path>` (arcs), labels -> `<text>`. Numbers formatted to 2 decimal places.
+
+**PDF**: Apache PDFBox vector output; see Section 12.7.
 
 ### 12.6 Headless Export (CLI)
 
@@ -730,24 +732,25 @@ Both PNG and SVG exports share the same rendering logic:
 - **diagram.json** (required): path to a diagram file.
 - **outputDir** (optional, default `exports/`): directory for output files.
 
-Produces 4 files: `<name>_canvas.png/svg` (default 700px diameter), `<name>_custom.png/svg` (1920px diameter). All exports use white-on-gray background, no grid.
+Produces 6 files: `<name>_canvas.png/svg/pdf` (default 700px diameter), `<name>_custom.png/svg/pdf` (1920px diameter). PDF label warnings (see Section 12.7) are printed after the file they apply to. All exports use white-on-gray background, no grid.
 
-### 12.7 PDF Export (Planned — v1.7.0, not yet implemented)
+### 12.7 PDF Export
 
-Agreed design for adding PDF as a third export format (mirrors Euclid Sketchpad §12.7, adapted to the disk):
+PDF is the third export format (mirrors Euclid Sketchpad §12.7, adapted to the disk). Implemented in `PdfExportCanvas`.
 
-- **Library**: Apache PDFBox 3.x (Apache 2.0) draws true vector output: paths, Bézier curves, dash patterns, fill transparency for regions, text. Add it to `build.gradle.kts`, add its notice to `THIRD_PARTY_NOTICES`, and check that it runs within the hardcoded jpackage modules (`java.base`, `java.desktop`, `java.logging`, `jdk.unsupported`).
-- **Shared rendering walker**: refactor `ExportRenderer` so that the grid (concentric circles + radial lines) and the 5-pass object logic (currently duplicated as `renderObjectsPng` / `renderObjectsSvg`, `renderGeodesicPng` / `renderGeodesicSvg`, `buildRegionPathPng` / `buildRegionPathSvg`) are written once. They will call a small internal drawing interface (line, circular arc, circle, path with fill/alpha, text, dash) with PNG, SVG, and PDF backends. Before refactoring, add snapshot tests for PNG and SVG output so the refactor can be checked for regressions. Keep the `sweepFlag = sweep < 0` rule for region arcs.
-- **Arcs**: PDF has no arc operator, so the PDF backend converts geodesic arcs, angle arcs, and region edges into cubic Bézier segments (≤ 90° each). Diameters stay straight lines.
-- **Page size**: one page of exactly W×H points, matching the exported pixel dimensions 1:1 (Diameter×Diameter for Canvas, Width×Height for Custom; same semantics as SVG). No paper-size options.
-- **Transparent background**: applies to PDF as it does to SVG. When checked, no gray exterior is drawn (the white disk is still drawn).
-- **Labels**: drawn directly in screen coordinates with no y-flip or baseline shift (same as the current PNG/SVG export).
-- **Label font**: DejaVu Sans (bundled TTF in `src/main/resources/fonts/`, license added to `THIRD_PARTY_NOTICES`), embedded via `PDType0Font.load()` so only the glyphs used are included. Same font in all three sister projects. Characters the font lacks (e.g. CJK, emoji) are replaced with `?` and the export shows a warning rather than failing. PNG and SVG label fonts are unchanged.
-- **Dialog**: add a third Format radio button (PDF) and a `*.pdf` file-chooser filter.
-- **Headless export**: produces 6 files (2 methods × PNG/SVG/PDF). Update the "4 files" messages and the project skill docs.
-- **Release**: ships as v1.7.0 with CHANGELOG, README feature list, and HANDOFF updates.
-
-**Still open:** PDF metadata (title, creator) and the PDF test approach (for example, parsing the output back with PDFBox).
+- **Library**: Apache PDFBox 3.0.x (Apache 2.0; runtime deps `fontbox`, `pdfbox-io`, `commons-logging`) draws true vector output: paths, Bézier curves, dash patterns, fill/stroke transparency (via `PDExtendedGraphicsState`), text. Its notices are in `THIRD_PARTY_NOTICES`. It runs within the hardcoded jpackage modules (`java.base`, `java.desktop`, `java.logging`, `jdk.unsupported`); no extra module is needed.
+- **Shared rendering walker**: `ExportRenderer` writes the grid (concentric circles + radial lines) and the 5-pass object logic once, drawing through the internal `ExportCanvas` interface (rect, circle, line, sector, path of lines/arcs with fill/alpha, text, disk clip, dash) with PNG, SVG, and PDF backends. PNG and SVG output is guarded by golden snapshot tests (`ExportRendererSnapshotTest`). The PNG/SVG backends keep the `sweepFlag = sweep < 0` rule for region arcs.
+- **Coordinates**: the PDF backend applies one page-level transform (y-flip plus crop offset), so the walker's screen-pixel coordinates map 1:1 to points. Text sets a flipped text matrix so glyphs stay upright.
+- **Arcs**: PDF has no arc operator, so the PDF backend converts geodesic arcs, angle arcs, region edges, circles, and the disk clip into cubic Bézier segments (≤ 90° each). Diameters stay straight lines. Angle sectors are drawn geometrically correct, matching PNG.
+- **Page size**: one page of exactly W×H points, matching the exported pixel dimensions 1:1 (Diameter×Diameter for Canvas, Width×Height for Custom; same crop semantics as SVG). No paper-size options.
+- **Transparent background**: applies to PDF as it does to PNG and SVG. When checked, neither the gray exterior nor the white disk is drawn.
+- **Labels**: drawn directly in screen coordinates with no y-flip or baseline shift (same as PNG/SVG export).
+- **Label font**: DejaVu Sans (bundled TTF at `src/main/resources/fonts/DejaVuSans.ttf`, license in `THIRD_PARTY_NOTICES`), embedded via `PDType0Font.load()` so only the glyphs used are included. The font is loaded only when a label is drawn. Same font in all three sister projects. Characters the font lacks (e.g. CJK) are replaced with `?`; `ExportRenderer.export` returns a warning per affected label (empty list for PNG/SVG), which the GUI shows in a warning alert after the export succeeds and headless export prints. The export never fails on such characters. PNG and SVG label fonts are unchanged.
+- **Metadata**: Title = output file name without extension; Creator = `Poincaré Sketchpad <APP_VERSION>`.
+- **Dialog**: a third Format radio button (PDF) and a "PDF documents" `*.pdf` file-chooser filter.
+- **Headless export**: produces 6 files (2 methods × PNG/SVG/PDF).
+- **Tests**: `PdfExportTest` parses the output back with PDFBox: MediaBox size (square canvas and non-square custom), metadata, label text via `PDFTextStripper`, embedded DejaVu subset font, `?` replacement plus warning, and pixel samples from `PDFRenderer` (gray exterior, white disk, point color; transparent background leaves the page empty).
+- **Release**: ships as v1.7.0.
 
 ---
 

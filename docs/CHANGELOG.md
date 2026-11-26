@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+- PDF export: a third Format option (PDF) in the Export dialog and in headless export, which now writes 6 files. Output is a single vector page of exactly W×H points with the same crop and transparent-background behavior as SVG
+- PDF labels use the bundled DejaVu Sans font, embedded as a subset; characters the font cannot display are replaced with `?` and the export shows a warning
+- PDF metadata: title is the output file name, creator is "Poincaré Sketchpad" and the app version
+- Apache PDFBox 3.0.8 dependency and DejaVu Fonts license in `THIRD_PARTY_NOTICES`
+
+### Changed
+
+- Export rendering refactored into a shared walker (`ExportCanvas`) with PNG, SVG, and PDF backends, guarded by golden snapshot tests for PNG and SVG
+
 ## [1.6.0] - 2026-11-14
 
 ### Changed

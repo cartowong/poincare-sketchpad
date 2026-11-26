@@ -19,7 +19,7 @@
 - **Custom constructions** — record a sequence of steps, save it, and reapply it with different inputs
 - **Built-in constructions** — midpoint, perpendicular line, and reflection point
 - **Transformations** — apply Mobius translations and rotations with live preview
-- **Export** — save diagrams as PNG or SVG with canvas or custom crop methods
+- **Export** — save diagrams as PNG, SVG, or PDF with canvas or custom crop methods
 - **Undo/redo** — full snapshot-based undo history
 
 ## Download

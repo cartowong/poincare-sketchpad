@@ -35,6 +35,7 @@ class ExportDialog(
     private val formatGroup = ToggleGroup()
     private val pngRadio = RadioButton("PNG").apply { toggleGroup = formatGroup; isSelected = true }
     private val svgRadio = RadioButton("SVG").apply { toggleGroup = formatGroup }
+    private val pdfRadio = RadioButton("PDF").apply { toggleGroup = formatGroup }
 
     // Checkboxes
     private val transparentBgCheck = CheckBox("Transparent background")
@@ -74,7 +75,7 @@ class ExportDialog(
 
         // Format section
         root.children.add(Label("Format:").apply { style = "-fx-font-weight: bold;" })
-        root.children.add(HBox(12.0, pngRadio, svgRadio))
+        root.children.add(HBox(12.0, pngRadio, svgRadio, pdfRadio))
 
         // Options
         root.children.add(Label("Options:").apply { style = "-fx-font-weight: bold;" })
@@ -251,6 +252,7 @@ class ExportDialog(
 
     private fun selectedFormat(): ExportFormat = when (formatGroup.selectedToggle) {
         svgRadio -> ExportFormat.SVG
+        pdfRadio -> ExportFormat.PDF
         else -> ExportFormat.PNG
     }
 
@@ -356,8 +358,11 @@ class ExportDialog(
             }
         }
 
-        val ext = if (format == ExportFormat.PNG) "*.png" else "*.svg"
-        val desc = if (format == ExportFormat.PNG) "PNG images" else "SVG images"
+        val (desc, ext) = when (format) {
+            ExportFormat.PNG -> "PNG images" to "*.png"
+            ExportFormat.SVG -> "SVG images" to "*.svg"
+            ExportFormat.PDF -> "PDF documents" to "*.pdf"
+        }
         val chooser = FileChooser()
         chooser.extensionFilters.add(FileChooser.ExtensionFilter(desc, ext))
         chooser.title = "Export Image"

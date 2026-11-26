@@ -9,7 +9,7 @@ import java.io.File
 
 /**
  * Headless JavaFX application that loads a diagram and exports it in all
- * method/format combinations (4 files total), then exits.
+ * method/format combinations (6 files total), then exits.
  *
  * Usage: --export <diagram.json> [outputDir]
  */
@@ -45,8 +45,9 @@ class HeadlessExportApp : Application() {
                 )
                 val ext = format.name.lowercase()
                 val file = File(outDir, "${baseName}_canvas.$ext")
-                ExportRenderer.export(settings, manager, file)
+                val warnings = ExportRenderer.export(settings, manager, file)
                 println("Exported: ${file.path}")
+                warnings.forEach { println("Warning: $it") }
             }
 
             // Custom: 1920px diameter
@@ -62,11 +63,12 @@ class HeadlessExportApp : Application() {
                 )
                 val ext = format.name.lowercase()
                 val file = File(outDir, "${baseName}_custom.$ext")
-                ExportRenderer.export(settings, manager, file)
+                val warnings = ExportRenderer.export(settings, manager, file)
                 println("Exported: ${file.path}")
+                warnings.forEach { println("Warning: $it") }
             }
 
-            println("Done. 4 files written to $outputDir")
+            println("Done. 6 files written to $outputDir")
         } catch (e: Exception) {
             System.err.println("Export failed: ${e.message}")
             e.printStackTrace()

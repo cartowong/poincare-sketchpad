@@ -1,11 +1,11 @@
 # Poincare Sketchpad — Handoff Document
 
-**Date:** 2026-11-08
+**Date:** 2026-11-26
 **Branch:** `main`
 
 ## Current State
 
-- **Build:** `./gradlew build` succeeds. `./gradlew test` passes all 70 tests.
+- **Build:** `./gradlew build` succeeds. `./gradlew test` passes all 83 tests.
 - **Code:** All source files for all 10 phases are written (geometry, model, persistence, UI, export). The app has not been manually tested via `./gradlew run` yet.
 - **Git:** `.claude/` is gitignored (except `.claude/skills/`).
 - **Spec:** `docs/SPEC.md` and `docs/GEOMETRY.md` describe the full application design.
@@ -55,8 +55,12 @@ src/main/kotlin/poincaresketchpad/
     Sidebar.kt                     # Object list, constructions table, measurements table
     SketchpadApp.kt                # Full app shell with menus
   export/
-    ExportDialog.kt                # Canvas/Custom export dialog
-    ExportRenderer.kt              # PNG (snapshot) and SVG (manual XML) export
+    ExportDialog.kt                # Canvas/Custom export dialog (PNG/SVG/PDF)
+    ExportRenderer.kt              # Shared export walker (grid + 5 passes); returns warnings
+    ExportCanvas.kt                # Internal drawing interface, PathSegment, PageGeometry
+    PngExportCanvas.kt             # JavaFX scene graph + Node.snapshot backend
+    SvgExportCanvas.kt             # Manual SVG XML backend
+    PdfExportCanvas.kt             # Apache PDFBox backend (Béziers, DejaVu Sans labels)
     HeadlessExportApp.kt           # CLI --export mode
 
 src/test/kotlin/poincaresketchpad/
@@ -72,6 +76,11 @@ src/test/kotlin/poincaresketchpad/
   persistence/
     DiagramSerializerTest.kt       # 8 tests
     ConstructionSerializerTest.kt  # 4 tests
+  export/
+    ExportRendererSnapshotTest.kt  # 8 tests (PNG/SVG goldens in src/test/resources/export-golden/)
+    PdfExportTest.kt               # 5 tests (parse back with PDFBox)
+
+src/main/resources/fonts/DejaVuSans.ttf  # PDF label font (DejaVu Fonts 2.37)
 ```
 
 ## Architecture Notes
@@ -98,10 +107,14 @@ src/test/kotlin/poincaresketchpad/
 
 - **Per-object styling.** Each object has `color`, `size`, `strokeStyle`, `strokeThickness` fields in `ObjectMetadata`. `StyleSettings` holds application-level defaults per category (Point, Geodesic, Circle, Angle, Region), applied automatically in `addObject()`. The Style menu is dual-purpose: when objects of the matching category are selected, it applies the style change to those objects' `ObjectMetadata` (with undo checkpoint and re-render); when nothing matching is selected, it updates the `StyleSettings` default for newly created objects. Right-click context menu also changes styles on selected objects. Styles serialize in diagram JSON with nullable fields for backward compat. Construction files strip styles. `StyleUtils` provides shared color/size/thickness mappings used by both `GeometryRenderer` and `ExportRenderer`.
 
+- **Export walker.** `ExportRenderer` walks the diagram once (background, disk clip, grid, 5 object passes) and draws through the internal `ExportCanvas` interface; `PngExportCanvas`, `SvgExportCanvas`, and `PdfExportCanvas` are the backends. Arc primitives (`sector`, `PathSegment.ArcTo`) carry center/radius/startAngle/sweep in the y-up convention (point at t is `(cx + r cos t, cy - r sin t)` in screen coords). The PDF backend applies a page-level y-flip + crop-offset transform so walker coordinates map 1:1 to points, converts arcs to ≤ 90° Béziers, and embeds a DejaVu Sans subset; unsupported label characters become `?` and `ExportRenderer.export` returns warnings (shown in a GUI alert / printed headless). PNG and SVG output is locked by golden tests: after an intentional rendering change, regenerate with `./gradlew test --tests '*ExportRendererSnapshotTest*' -PupdateGoldens` and review the diff. The test JVM pins `prism.order=sw` because GPU and software pipelines antialias differently.
+
 ## Known Issues / Gaps
 
-- **PDF export not implemented yet.** The agreed design is in `docs/SPEC.md` §12.7: PDFBox, a shared PNG/SVG/PDF rendering walker with PNG/SVG snapshot tests added first, W×H-point pages, 6 headless files, v1.7.0. Labels use embedded DejaVu Sans. Still open: PDF metadata and the PDF test approach.
 - **Compiler warnings.** A few unused parameter and name-shadowing warnings exist (HyperbolicUtils, ExportRenderer, GeometryRenderer, Sidebar). Non-blocking.
 - **Custom export not manually tested.** The rectangular crop, scale slider, overlay, and aspect ratio lock have been implemented but not yet verified via `./gradlew run`.
 - **Label drag not manually verified.** The Y-sign and viewport bugs have been fixed in code but not yet confirmed via `./gradlew run`.
+- **SVG angle sectors use the wrong arc.** `SvgExportCanvas` always emits sweep-flag 0 for angle sectors, so the arc lies on a mirrored circle instead of one centered on the vertex (inferred from SVG arc rules, not visually confirmed). PNG and PDF are correct. Fixing it requires regenerating the SVG goldens with `-PupdateGoldens`.
+- **PDF export GUI path not manually verified.** The PDF radio, `*.pdf` filter, and missing-glyph warning alert have not been exercised via `./gradlew run`. Headless and jpackage app-image export were verified.
+- **Golden test portability.** PNG goldens depend on the software rasterizer and OS label fonts and have not yet run on CI's macOS image. SVG goldens assume a `.` decimal separator (`fmt` uses the default locale).
 - **ESC handling relies on canvas focus.** `DiskCanvasPane` calls `requestFocus()` when entering apply mode and transformation mode. If a future mode entry path bypasses this, ESC won't reach the canvas's key handler. The "Cancel Recording" menu item has no accelerator — recording cancellation is handled via `onEscapeFallthrough` as the lowest-priority ESC handler.

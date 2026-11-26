@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="300" height="450" viewBox="168.00 93.00 300.00 450.00">
+  <defs>
+    <clipPath id="disk-clip">
+      <circle cx="318.00" cy="318.00" r="300.00"/>
+    </clipPath>
+  </defs>
+  <g clip-path="url(#disk-clip)">
+    <path d="M 318.00 318.00 L 468.00 318.00 A 286.28 286.28 0 0 0 408.00 468.00 L 318.00 318.00 Z" fill="#F44336" fill-opacity="0.3" stroke="none"/>
+    <path d="M 348.00 258.00 A 685.69 685.69 0 0 1 198.00 228.00 A 431.21 431.21 0 0 1 228.00 408.00 A 383.49 383.49 0 0 1 408.00 468.00 A 1067.83 1067.83 0 0 1 348.00 258.00 Z" fill="#FFEB3B" fill-opacity="0.3" stroke="none"/>
+    <path d="M 348.00 258.00 L 318.11 255.43 A 30.00 30.00 0 1 0 353.25 287.54 Z" fill="#795548" fill-opacity="0.3" stroke="#795548" stroke-opacity="0.7" stroke-width="1"/>
+    <path d="M 318.00 318.00 L 328.29 335.15 A 20.00 20.00 0 1 0 338.00 318.00 Z" fill="#4CAF50" fill-opacity="0.3" stroke="#4CAF50" stroke-opacity="0.7" stroke-width="1"/>
+    <path d="M 605.15 231.15 A 685.69 685.69 0 0 1 59.33 166.05" fill="none" stroke="#4CAF50" stroke-width="3.00" stroke-dasharray="6,4"/>
+    <line x1="318.00" y1="318.00" x2="105.87" y2="530.13" stroke="#9C27B0" stroke-width="1.00"/>
+    <path d="M 198.00 228.00 A 1847.84 1847.84 0 0 1 478.54 571.43" fill="none" stroke="#795548" stroke-width="2.00"/>
+    <line x1="318.00" y1="318.00" x2="468.00" y2="318.00" stroke="#000000" stroke-width="2.00"/>
+    <path d="M 348.00 258.00 A 1067.83 1067.83 0 0 0 408.00 468.00" fill="none" stroke="#000000" stroke-width="1.00" stroke-dasharray="6,4"/>
+    <line x1="618.00" y1="318.00" x2="18.00" y2="318.00" stroke="#FFEB3B" stroke-width="2.00" stroke-dasharray="6,4"/>
+    <circle cx="346.57" cy="260.86" r="63.89" fill="none" stroke="#9C27B0" stroke-width="3.00" stroke-dasharray="6,4"/>
+    <circle cx="348.00" cy="258.00" r="6.00" fill="#F44336"/>
+    <circle cx="198.00" cy="228.00" r="4.00" fill="#000000"/>
+    <circle cx="408.00" cy="468.00" r="3.00" fill="#4CAF50"/>
+    <circle cx="318.00" cy="318.00" r="4.00" fill="#000000"/>
+    <circle cx="468.00" cy="318.00" r="4.00" fill="#000000"/>
+    <circle cx="228.00" cy="408.00" r="4.00" fill="#000000"/>
+    <text x="358.00" y="248.00" font-size="12.0" fill="black">A</text>
+    <text x="178.00" y="243.00" font-size="12.0" fill="black">B&lt;&amp;&gt;</text>
+    <text x="335.43" y="245.69" font-size="12.0" fill="black">l</text>
+    <text x="356.57" y="186.97" font-size="12.0" fill="black">c</text>
+    <text x="358.00" y="248.00" font-size="12.0" fill="black">α</text>
+    <text x="408.00" y="358.00" font-size="12.0" fill="black">R</text>
+  </g>
+</svg>
