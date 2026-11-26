@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [1.7.0] - 2026-11-26
 
 ### Added
 
@@ -16,6 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 ### Changed
 
 - Export rendering refactored into a shared walker (`ExportCanvas`) with PNG, SVG, and PDF backends, guarded by golden snapshot tests for PNG and SVG
+- Product webpage cross-references Riemann Sketchpad
 
 ## [1.6.0] - 2026-11-14
 
