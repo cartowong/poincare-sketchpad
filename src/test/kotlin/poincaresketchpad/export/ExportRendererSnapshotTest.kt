@@ -17,7 +17,8 @@ import javax.imageio.ImageIO
  * Golden-file snapshot tests for [ExportRenderer] PNG and SVG output.
  *
  * Goldens live in `src/test/resources/export-golden/`. SVG is compared as exact text,
- * PNG pixel-by-pixel (exact ARGB match). The test JVM pins `prism.order=sw` (see
+ * PNG pixel-by-pixel (exact ARGB match) with labels hidden, since label glyphs
+ * rasterize differently per OS. The test JVM pins `prism.order=sw` (see
  * build.gradle.kts) because the GPU and software pipelines antialias differently.
  *
  * To regenerate the goldens after an intentional rendering change, run:
@@ -171,7 +172,9 @@ class ExportRendererSnapshotTest {
     @MethodSource("cases")
     fun `png export matches golden`(case: Case) {
         val out = File(tempDir, "${case.name}.png")
-        val manager = buildFixture()
+        // Labels are off: glyph rasterization differs per OS and macOS image, and
+        // label placement is already pinned by the SVG goldens.
+        val manager = buildFixture().also { m -> m.allObjects().forEach { m.getMetadata(it.id)!!.labelVisible = false } }
         runOnFxThread { ExportRenderer.export(settings(case, ExportFormat.PNG), manager, out) }
         val golden = File(goldenDir, "${case.name}.png")
         if (updateGoldens) {
